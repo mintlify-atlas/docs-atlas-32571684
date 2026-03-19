@@ -1,0 +1,102 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Node.js Meeting Artifacts Creator",
+  "projectDescription": "A CLI tool that automates the creation of GitHub issues and HackMD meeting minutes documents for Node.js team meetings by reading calendar events and group templates.",
+  "theme": "palm",
+  "primaryColor": "#675ff1",
+  "lightColor": "#4c4979",
+  "darkColor": "#040405",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "installation"]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment-variables",
+              "configuration/meeting-base",
+              "configuration/github-actions"
+            ]
+          },
+          {
+            "group": "Templates",
+            "pages": [
+              "templates/overview",
+              "templates/invited",
+              "templates/observers",
+              "templates/meeting-base",
+              "templates/minutes-base",
+              "templates/variables"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/adding-meeting-group",
+              "guides/dry-run",
+              "guides/development"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "CLI Reference",
+            "pages": [
+              "reference/cli",
+              "reference/options"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "reference/api/meeting",
+              "reference/api/github",
+              "reference/api/hackmd",
+              "reference/api/calendar"
+            ]
+          },
+          {
+            "group": "Meeting Groups",
+            "pages": [
+              "reference/meeting-groups"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Automated GitHub issue creation for scheduled Node.js team meetings",
+    "HackMD meeting minutes document generation with collaborative editing",
+    "iCal calendar integration for automatic meeting date detection",
+    "Template-based customization for different Node.js working groups",
+    "Agenda auto-population from labeled GitHub issues and PRs",
+    "Dry-run mode for previewing output without side effects",
+    "GitHub Actions integration for scheduled and manual workflow triggers",
+    "Support for 20+ Node.js working groups and committees out of the box"
+  ],
+  "publicApiSurface": [
+    "create-node-meeting-artifacts <group> [--dry-run] [--force] [--verbose]",
+    "readMeetingConfig(config) -> MeetingConfig",
+    "generateMeetingTitle(config, meetingConfig, meetingDate) -> string",
+    "generateMeetingAgenda(agendaIssues) -> string",
+    "generateMeetingIssue(config, meetingConfig, meetingDate, meetingAgenda, minutesDocLink) -> Promise<string>",
+    "generateMeetingMinutes(config, meetingConfig, meetingTitle, meetingAgenda, minutesDocLink, githubIssueLink) -> Promise<string>",
+    "createGitHubClient(config) -> Octokit",
+    "getAgendaIssues(githubClient, config, meetingConfig) -> Promise<Record<string, GitHubIssue[]>>",
+    "createOrUpdateGitHubIssue(githubClient, config, meetingConfig, title, content) -> Promise<GitHubIssue>",
+    "createHackMDClient(config, meetingConfig) -> HackMDAPI",
+    "getOrCreateMeetingNotesDocument(hackmdClient, title, config) -> Promise<HackMDNote>",
+    "updateMeetingNotesDocument(hackmdClient, noteId, content) -> Promise<HackMDNote>",
+    "getEventsFromCalendar(url) -> Promise<CalendarComponent[]>",
+    "findNextMeetingDate(allEvents, meetingConfig) -> Promise<Date|null>"
+  ]
+}
