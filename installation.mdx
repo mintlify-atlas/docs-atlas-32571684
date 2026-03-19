@@ -84,7 +84,7 @@ This reads `.nvmrc` and installs or activates Node.js 22. If you use a different
     Copy the token value. You will not be able to view it again after leaving the page.
   </Step>
   <Step title="Optional: set a team workspace">
-    If you want meeting notes created in a shared team space rather than your personal HackMD account, note your team's slug. You can set it with the `HACKMD_TEAM_NAME` environment variable.
+    If you want meeting notes created in a shared team space rather than your personal HackMD account, note your team's slug. You configure it per meeting group via the `HACKMD_TEAM_NAME` property in each `meeting_base_<shortname>` template file — not as a global environment variable.
   </Step>
 </Steps>
 
@@ -113,9 +113,12 @@ Edit `.env` and uncomment each line, replacing the placeholder values with your 
 |---|---|---|
 | `GITHUB_TOKEN` | Yes | GitHub Personal Access Token with `repo` scope |
 | `HACKMD_API_TOKEN` | Yes | HackMD API token for creating and updating notes |
-| `HACKMD_TEAM_NAME` | No | HackMD team slug; defaults to your personal space |
 
 The tool loads these variables at runtime using Node.js's built-in `--env-file` flag — no additional dotenv configuration is required.
+
+<Note>
+  `HACKMD_TEAM_NAME` is configured per meeting group inside the `meeting_base_<shortname>` template file, not as a global environment variable. See [Meeting base configuration](/configuration/meeting-base) for details.
+</Note>
 
 ## Verify installation
 

@@ -31,7 +31,7 @@ The application is composed of six source modules under `src/`:
 | Meeting | `src/meeting.mjs` | Generates issue content, minutes content, titles, and agendas |
 | GitHub | `src/github.mjs` | Creates and updates GitHub issues, fetches agenda-tagged issues |
 | HackMD | `src/hackmd.mjs` | Creates and updates HackMD notes via the HackMD API |
-| Utils | `src/utils.mjs` | Shared utility functions used across modules |
+| Utils | `src/utils/dates.mjs`, `src/utils/templates.mjs`, `src/utils/urls.mjs` | Date formatting, template variable substitution, and timezone link generation |
 
 The main entry point, `create-node-meeting-artifacts.mjs`, wires these modules together using the `commander` CLI framework.
 
@@ -52,10 +52,10 @@ Before you can use the tool, you need:
   <Card title="Installation" icon="wrench" href="/installation">
     Detailed setup instructions including Node.js version management and token configuration.
   </Card>
-  <Card title="Configuration" icon="gear" href="/configuration">
+  <Card title="Configuration" icon="gear" href="/configuration/environment-variables">
     Learn about environment variables, meeting base files, and optional settings.
   </Card>
-  <Card title="Templates" icon="file" href="/templates">
+  <Card title="Templates" icon="file" href="/templates/overview">
     Understand the four template files each meeting group requires and how to create new ones.
   </Card>
 </CardGroup>

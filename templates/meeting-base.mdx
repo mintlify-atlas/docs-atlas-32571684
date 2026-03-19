@@ -27,8 +27,8 @@ The file uses standard dotenv syntax: `KEY="value"` pairs, one per line. Values 
   The iCal URL for the group's meeting calendar. The CLI fetches this URL to determine the next meeting date and time.
 </ParamField>
 
-<ParamField path="USER" type="string" required>
-  The GitHub organization name. For all Node.js groups this is `nodejs`.
+<ParamField path="USER" type="string" default="nodejs">
+  The GitHub organization name. Defaults to `nodejs` if not set (as defined in `src/constants.mjs`).
 </ParamField>
 
 <ParamField path="REPO" type="string" required>
@@ -39,8 +39,8 @@ The file uses standard dotenv syntax: `KEY="value"` pairs, one per line. Values 
   The full human-readable name of the group. Used in the meeting issue title (e.g., `Node.js Technical Steering Committee (TSC) Meeting 2025-01-15`).
 </ParamField>
 
-<ParamField path="AGENDA_TAG" type="string" required>
-  The GitHub label used to search for agenda items across the organization. Issues and pull requests carrying this label are automatically included in the meeting agenda.
+<ParamField path="AGENDA_TAG" type="string">
+  The GitHub label used to search for agenda items across the organization. If omitted, defaults to `<shortname>-agenda` (e.g., `tsc-agenda`). Issues and pull requests carrying this label are automatically included in the meeting agenda.
 </ParamField>
 
 <ParamField path="HOST" type="string">

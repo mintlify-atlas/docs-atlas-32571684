@@ -16,7 +16,7 @@ The positional `<group>` argument is the shortname of a meeting group. It must e
 
 If any of these files is missing the tool exits with a non-zero code. See [Supported Meeting Groups](/reference/meeting-groups) for the full list of valid shortnames.
 
-You can also store these files in a custom directory by setting the `MEETINGS_CONFIG_DIR` environment variable, though the tool currently reads templates from the path configured in `src/config.mjs` (the `templates/` directory bundled with the package).
+The template files are always resolved from the `templates/` directory bundled with the package (set at `src/config.mjs` as `directories.templates` using `dirname(import.meta.dirname)`). The `MEETINGS_CONFIG_DIR` environment variable sets `directories.config` — a separate path that is available in the config object but is not currently used by the template-loading code paths.
 
 ## `--dry-run`
 

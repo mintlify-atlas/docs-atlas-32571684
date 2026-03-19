@@ -15,7 +15,7 @@ export const parseVariables = (template, variables) => {
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `$${key}$`;
     processed = processed.replace(
-      new RegExp(placeholder.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), 'g'),
+      new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
       value || ''
     );
   }
