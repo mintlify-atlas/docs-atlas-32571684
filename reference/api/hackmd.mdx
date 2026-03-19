@@ -1,0 +1,149 @@
+---
+title: "HackMD module API"
+description: "API reference for src/hackmd.mjs — HackMD integration functions"
+---
+
+The `hackmd.mjs` module wraps [@hackmd/api](https://www.npmjs.com/package/@hackmd/api) to create and update meeting minutes documents on HackMD.
+
+## `createHackMDClient(config, meetingConfig)`
+
+Creates an authenticated HackMD API client, pointed at either a team endpoint or the personal endpoint.
+
+```javascript
+import * as hackmd from './src/hackmd.mjs';
+
+const hackmdClient = hackmd.createHackMDClient(config, meetingConfig);
+```
+
+### Parameters
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Reads `config.hackmd.apiToken` for authentication.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration returned by `readMeetingConfig`. Reads `meetingConfig.properties.HACKMD_TEAM_NAME` to determine the API base URL.
+</ParamField>
+
+### Returns
+
+`HackMDAPI` — a configured client instance.
+
+- If `HACKMD_TEAM_NAME` is set in the meeting template: the client uses `https://api.hackmd.io/v1/teams/<team>` as its base URL, so all requests operate in the context of that team's workspace.
+- If `HACKMD_TEAM_NAME` is not set: the client uses `https://api.hackmd.io/v1` (personal workspace).
+
+---
+
+## `getOrCreateMeetingNotesDocument(hackmdClient, title, config)`
+
+Returns an existing HackMD note with the given title, or creates a new empty one if none is found.
+
+```javascript
+const note = await hackmd.getOrCreateMeetingNotesDocument(
+  hackmdClient,
+  meetingTitle,
+  config
+);
+```
+
+### Parameters
+
+<ParamField path="hackmdClient" type="HackMDAPI" required>
+  HackMD API client returned by `createHackMDClient`.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The meeting title used to look up or name the document.
+</ParamField>
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Reads `config.force` to decide whether to skip the existing-note check.
+</ParamField>
+
+### Returns
+
+`Promise<HackMDNote>` — the existing or newly created note object.
+
+**Logic:**
+1. If `force` is `false`: fetches the full note list from the HackMD account and returns the first note whose `title` exactly matches the given title.
+2. If `force` is `true` or no match is found: calls `createMeetingNotesDocument` with an empty string for content. The caller is expected to populate the content in a subsequent `updateMeetingNotesDocument` call.
+
+---
+
+## `createMeetingNotesDocument(hackmdClient, title, content)`
+
+Creates a new HackMD note with the given title and content.
+
+```javascript
+const note = await hackmd.createMeetingNotesDocument(
+  hackmdClient,
+  title,
+  content
+);
+```
+
+### Parameters
+
+<ParamField path="hackmdClient" type="HackMDAPI" required>
+  HackMD API client.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  Document title.
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  Initial document content in markdown.
+</ParamField>
+
+### Returns
+
+`Promise<HackMDNote>` — the created note object.
+
+The note is created with the following default permissions from `HACKMD_DEFAULT_PERMISSIONS`:
+
+| Permission | Value |
+|------------|-------|
+| `readPermission` | `"guest"` |
+| `writePermission` | `"signed_in"` |
+| `commentPermission` | `"signed_in_users"` |
+
+<Note>
+  The HackMD API may return either `{ note: { ... } }` or `{ ... }` directly. The function normalises both shapes and always resolves with the note object itself.
+</Note>
+
+---
+
+## `updateMeetingNotesDocument(hackmdClient, noteId, content)`
+
+Updates the content of an existing HackMD note by its ID.
+
+```javascript
+await hackmd.updateMeetingNotesDocument(
+  hackmdClient,
+  hackmdNote.id,
+  minutesContent
+);
+```
+
+### Parameters
+
+<ParamField path="hackmdClient" type="HackMDAPI" required>
+  HackMD API client.
+</ParamField>
+
+<ParamField path="noteId" type="string" required>
+  The ID of the HackMD note to update. Available as `note.id` on the object returned by `getOrCreateMeetingNotesDocument`.
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  The new document content in markdown.
+</ParamField>
+
+### Returns
+
+`Promise<HackMDNote>` — the updated note object.
+
+<Note>
+  Like `createMeetingNotesDocument`, this function normalises the API response to handle both `{ note: { ... } }` and `{ ... }` return shapes.
+</Note>

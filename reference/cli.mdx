@@ -1,0 +1,79 @@
+---
+title: "CLI Reference"
+description: "Complete command reference for create-node-meeting-artifacts"
+---
+
+## Synopsis
+
+```bash
+create-node-meeting-artifacts.mjs <group> [options]
+```
+
+The `<group>` argument is required. It identifies the meeting group whose templates are used to generate the issue, minutes document, and calendar lookup.
+
+## Arguments
+
+<ParamField path="group" type="string" required>
+  The meeting group shortname (e.g., `tsc`, `build`, `uvwasi`). Must match a set of four template files in the `templates/` directory:
+  - `invited_<group>`
+  - `observers_<group>`
+  - `meeting_base_<group>`
+  - `minutes_base_<group>`
+
+  See [Supported Meeting Groups](/reference/meeting-groups) for the full list of available shortnames.
+</ParamField>
+
+## Options
+
+<ParamField path="--dry-run" type="boolean" default="false">
+  Show output without creating or updating anything. The tool still reads configuration, fetches agenda issues from GitHub, and generates content — but it prints the result to the console instead of writing to HackMD or GitHub. Calendar fetching is also skipped.
+</ParamField>
+
+<ParamField path="--force" type="boolean" default="false">
+  Create a new GitHub issue and a new HackMD document even if one already exists with the same title. By default the tool searches for an existing open issue and updates it if found.
+</ParamField>
+
+<ParamField path="--verbose" type="boolean" default="false">
+  Show debug output. Passes `console` as the Octokit logger, which causes `console.debug` output to appear for every GitHub API call.
+</ParamField>
+
+## Usage examples
+
+<CodeGroup>
+
+```bash Basic run
+node create-node-meeting-artifacts.mjs tsc
+```
+
+```bash With env file
+node --env-file=.env create-node-meeting-artifacts.mjs tsc
+```
+
+```bash npx style
+npx --env-file=.env . tsc
+```
+
+```bash Dry run
+node --env-file=.env create-node-meeting-artifacts.mjs tsc --dry-run
+```
+
+```bash Force new issue
+node --env-file=.env create-node-meeting-artifacts.mjs tsc --force
+```
+
+```bash Verbose debug
+node --env-file=.env create-node-meeting-artifacts.mjs tsc --verbose
+```
+
+</CodeGroup>
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success — artifacts were created, or no meeting was found for the current week (both are normal outcomes). |
+| Non-zero | Error — a required configuration value is missing, a template file cannot be read, or an API call fails. |
+
+<Note>
+  The tool uses [commander](https://github.com/tj/commander.js) v14 for argument parsing. The `--env-file` flag is a Node.js built-in available since Node.js 20.6.0 and is not part of this package.
+</Note>

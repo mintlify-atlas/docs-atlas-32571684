@@ -1,0 +1,58 @@
+---
+title: "Templates Overview"
+description: "Each meeting group requires a set of template files that define its configuration, members, and document structure."
+---
+
+The CLI generates meeting artifacts by combining live GitHub and calendar data with a set of static template files you maintain per meeting group. Every group needs exactly four template files in the `templates/` directory, plus one shared template used for all GitHub issues.
+
+## Naming convention
+
+Template filenames follow the pattern `<type>_<shortname>`, where `<shortname>` is an abbreviated identifier for the group. For example, the TSC group uses `tsc` as its shortname:
+
+```text
+templates/
+├── invited_tsc
+├── observers_tsc
+├── meeting_base_tsc
+├── minutes_base_tsc
+└── meeting_issue.md      # shared across all groups
+```
+
+All four group-specific files must use the same shortname. The CLI resolves them by appending the shortname you pass at runtime.
+
+## Template types
+
+<CardGroup cols={2}>
+  <Card title="Invited" icon="users" href="/templates/invited">
+    Defines which GitHub team gets @mentioned in the meeting issue as the list of invited attendees.
+  </Card>
+  <Card title="Observers" icon="eye" href="/templates/observers">
+    Lists regular observers who attend meetings consistently but are not voting members.
+  </Card>
+  <Card title="Meeting Base" icon="settings" href="/templates/meeting-base">
+    A dotenv-format configuration file with calendar, repository, and group settings.
+  </Card>
+  <Card title="Minutes Base" icon="file-text" href="/templates/minutes-base">
+    A Markdown template for the HackMD meeting minutes document, pre-structured with standard sections.
+  </Card>
+</CardGroup>
+
+## The shared meeting issue template
+
+The file `meeting_issue.md` is not group-specific. It provides the structure for every GitHub issue the CLI creates, regardless of which group the meeting is for. It contains all of the time, agenda, invited, and joining-instructions sections and uses [template variables](/templates/variables) that are substituted at generation time.
+
+## How templates are loaded
+
+When you run the CLI, `readMeetingConfig()` in `src/meeting.mjs` reads the three group-specific non-minutes files for your meeting group:
+
+```javascript
+const invited = await readFile(`templates/invited_${meetingGroup}`, 'utf8');
+const observers = await readFile(`templates/observers_${meetingGroup}`, 'utf8');
+const baseMeetingInfo = await readFile(`templates/meeting_base_${meetingGroup}`, 'utf8');
+```
+
+The `meeting_base` file is then parsed by the `dotenv` library's `parse()` function to extract the configuration properties. The `minutes_base` file is read separately by `generateMeetingMinutes()` when the CLI creates the HackMD document.
+
+## Template variables
+
+All template files support variable substitution using the `$VARIABLE_NAME$` syntax. See the [Template Variables](/templates/variables) reference for the full list of available substitutions.

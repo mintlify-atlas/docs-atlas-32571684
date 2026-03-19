@@ -1,0 +1,69 @@
+---
+title: "Invited Template"
+description: "Define the list of meeting members that appears in the GitHub issue and meeting minutes."
+---
+
+The `invited_<shortname>` template defines the list of individuals who are invited to a meeting. This content appears verbatim in both the GitHub meeting issue (under the **Invited** heading) and in the **Present** section of the HackMD minutes document.
+
+## File naming
+
+```text
+templates/invited_<shortname>
+```
+
+For example: `templates/invited_tsc`
+
+## Format
+
+The file is a plain Markdown list. Each line represents one member, typically including their full name, GitHub handle, and role:
+
+```markdown
+* Full Name @github_handle (role)
+* Full Name @github_handle (role)
+```
+
+There is no required structure beyond being a Markdown list. You can adapt the format to match your group's conventions, but keeping handle and role inline makes the generated issue and minutes easier to read.
+
+## Example: TSC invited file
+
+The following is the actual `invited_tsc` file used for the Node.js Technical Steering Committee:
+
+```markdown
+* Antoine du Hamel @aduh95 (voting member)
+* Yagiz Nizipli @anonrig (voting member)
+* Benjamin Gruenbaum @benjamingr (voting member)
+* Ruben Bridgewater @BridgeAR (voting member)
+* Gireesh Punathil @gireeshpunathil (voting member)
+* James Snell @jasnell (voting member)
+* Joyee Cheung @joyeecheung (voting member)
+* Chengzhong Wu @legendecas (voting member)
+* Marco Ippolito @marco-ippolito (voting member)
+* Matteo Collina @mcollina (voting member)
+* Filip Skokan @panva (voting member)
+* Rafael Gonzaga @RafaelGSS (voting member)
+* Darshan Sen @RaisinTen (voting member)
+* Richard Lau @richardlau (voting member)
+* Robert Nagy @ronag (voting member)
+* Ruy Adorno @ruyadorno (voting member)
+* Paolo Insogna @ShogunPanda (voting member)
+* Michaël Zasso @targos (voting member)
+* Tobias Nießen @tniessen (voting member)
+* Beth Griggs @BethGriggs (regular member)
+* Ben Noordhuis @bnoordhuis (regular member)
+* Colin Ihrig @cjihrig (regular member)
+* Geoffrey Booth @GeoffreyBooth (regular member)
+* Moshe Atlow @MoLow (regular member)
+* Shelley Vohr @codebytere (regular member)
+* Rich Trott @Trott (regular member)
+* Joe Sepi @joesepi (Guest - Node.js CPC rep)
+```
+
+## How it maps to the issue
+
+The entire contents of the invited file are substituted for the `$INVITEES$` variable in `meeting_issue.md` and for the `$INVITED$` variable in `minutes_base_<shortname>`. The substitution is a direct string replacement — no parsing or transformation is applied.
+
+See [Template Variables](/templates/variables) for the full variable reference.
+
+<Tip>
+  Individual `@handle` mentions in this file do **not** trigger GitHub notifications. If you want members to receive a notification when the issue is created, use a GitHub Team mention (e.g., `@nodejs/tsc`) in the invited file or elsewhere in the issue body. GitHub Teams send notifications to all team members when mentioned.
+</Tip>

@@ -1,0 +1,65 @@
+---
+title: "Observers Template"
+description: "List regular meeting observers who attend consistently but are not voting or regular members."
+---
+
+The `observers_<shortname>` template lists people who regularly attend a group's meetings as observers rather than members. Their names appear in the **Observers/Guests** section of the GitHub meeting issue and in the **Present** section of the HackMD minutes document.
+
+## File naming
+
+```text
+templates/observers_<shortname>
+```
+
+For example: `templates/observers_tsc`
+
+## Format
+
+The file is a plain Markdown list. The conventional format includes a GitHub handle, the person's full name, and the word "observer" to distinguish them from members:
+
+```markdown
+* @github_handle (Full Name - observer)
+* @github_handle (Full Name - observer)
+```
+
+The format is not strictly enforced — the file contents are inserted as-is into the generated documents. You can adapt the format to your group's conventions.
+
+## Example: TSC observers file
+
+The `observers_tsc` file for the Node.js TSC is currently empty, meaning the TSC has no standing observers configured. This is a valid state — the observers file is optional. When empty, the `$OBSERVERS$` placeholder in the issue and minutes is replaced with an empty string.
+
+An example of a populated observers file (from the `observers_commcomm` template) looks like this:
+
+```markdown
+* @therebelrobot (Oz Haven - observer)
+* @ParidelPooya (Pooya Paridel - observer)
+* @rykerrumsey (Ryker Rumsey - observer)
+* @baez (Behzad Karim - observer)
+* @BinarySo1o (Therese Stirling - observer)
+* @amiller-gh (Adam Miller - observer)
+* @yosuke-furukawa (Yosuke Furukawa - observer)
+* @Maurice-Hayward (Maurice Hayward - observer)
+* @mikehostetler (Mike Hostetler - observer)
+* @sarahkconway (Sarah Conway - observer)
+* @Tiriel (Benjamin Zaslavsky - observer)
+* @DiegoZoracKy (Diego ZoracKy - observer)
+* @ZibbyKeaton (Zibby Keaton - observer)
+* @tobyfarley (Toby Farley - observer)
+* @Bamieh (Ahmad Bamieh - observer)
+* @pchrysa (Chrysa - observer)
+* @foadlab (observer)
+* @codeekage (Abraham Agiri - observer)
+* @Voskan (Voskan Voskanyan - observer)
+```
+
+## How it maps to the issue and minutes
+
+The contents of the observers file are substituted for `$OBSERVERS$` in both `meeting_issue.md` (under **Observers/Guests**) and in `minutes_base_<shortname>` (under **Present**, immediately after `$INVITED$`).
+
+When the file is empty, `$OBSERVERS$` is replaced with an empty string. The `parseVariables()` function treats a missing or empty value as `''`, so no placeholder text is left in the output.
+
+See [Template Variables](/templates/variables) for the full variable reference.
+
+<Note>
+  The observers file must exist in the `templates/` directory even if it is empty. The CLI will throw a file-not-found error if the file is missing entirely.
+</Note>

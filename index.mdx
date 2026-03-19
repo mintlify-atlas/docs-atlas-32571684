@@ -1,97 +1,65 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Node.js Meeting Artifacts Creator"
+description: "Automate GitHub issues and HackMD meeting minutes for Node.js team meetings — in a single command."
 ---
 
-## Setting up
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get running in under 5 minutes with your first meeting group.
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/reference/cli">
+    Full command reference with all flags and options.
+  </Card>
+  <Card title="Templates" icon="file-lines" href="/templates/overview">
+    Learn how to create and customize meeting templates.
+  </Card>
+  <Card title="Add a Meeting Group" icon="users" href="/guides/adding-meeting-group">
+    Step-by-step guide to support a new Node.js working group.
+  </Card>
+</CardGroup>
 
-Get your documentation site up and running in minutes.
+## What it does
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
+`create-node-meeting-artifacts` is a CLI tool built for the Node.js project. Given a meeting group name, it:
+
+1. Reads your group's template files for attendees, observers, and configuration
+2. Fetches the group's iCal calendar to find the next scheduled meeting date
+3. Searches GitHub for open issues labeled with the group's agenda tag
+4. Creates a **HackMD document** pre-filled with the meeting minutes template and agenda
+5. Creates (or updates) a **GitHub issue** with the meeting details, timezone table, and HackMD link
+
+Both outputs are linked to each other — the GitHub issue contains the HackMD link and the HackMD doc contains the GitHub issue link.
+
+## Supported meeting groups
+
+Over 20 Node.js working groups and committees have templates built in, including:
+
+- **TSC** — Technical Steering Committee
+- **Build** — Build Working Group
+- **Diagnostics** — Diagnostics Working Group
+- **Modules** — Modules Team
+- **Security** — Security Working Group
+- **Release** — Release Working Group
+- **Next-10** — Next-10 Initiative
+- And many more...
+
+<Card title="View all meeting groups" icon="list" href="/reference/meeting-groups">
+  Browse the complete list of supported Node.js working groups.
 </Card>
 
-## Make it yours
+## Prerequisites
 
-Design a docs site that looks great and empowers your users.
+Before you begin, you need:
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+- **Node.js 22+** — The tool uses modern ESM and requires Node.js LTS
+- **GitHub Personal Access Token** — With `repo` scope for creating issues
+- **HackMD API Token** — For creating and updating meeting minutes documents
 
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install the tool and set up your environment.
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Environment Variables" icon="key" href="/configuration/environment-variables">
+    Configure your GitHub and HackMD tokens.
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+</CardGroup>

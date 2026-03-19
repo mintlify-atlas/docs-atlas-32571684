@@ -1,0 +1,99 @@
+---
+title: "Meeting Base Template"
+description: "The dotenv-format configuration file that defines calendar, repository, and group settings for a meeting group."
+---
+
+The `meeting_base_<shortname>` file is the primary configuration source for a meeting group. It uses dotenv format and is parsed by the `dotenv` library's `parse()` function inside `readMeetingConfig()` in `src/meeting.mjs`. The resulting key-value pairs drive how meeting issues are titled, where they are posted, which agenda items are included, and how participants join.
+
+## File naming
+
+```text
+templates/meeting_base_<shortname>
+```
+
+For example: `templates/meeting_base_tsc`
+
+## Format
+
+The file uses standard dotenv syntax: `KEY="value"` pairs, one per line. Values that span multiple lines must be wrapped in double quotes.
+
+## Properties
+
+<ParamField path="CALENDAR_FILTER" type="string" required>
+  The exact name of calendar events that identify this group's meeting slots. The CLI filters the group's iCal feed using this string to find the next scheduled meeting.
+</ParamField>
+
+<ParamField path="ICAL_URL" type="string" required>
+  The iCal URL for the group's meeting calendar. The CLI fetches this URL to determine the next meeting date and time.
+</ParamField>
+
+<ParamField path="USER" type="string" required>
+  The GitHub organization name. For all Node.js groups this is `nodejs`.
+</ParamField>
+
+<ParamField path="REPO" type="string" required>
+  The repository name within the GitHub organization where meeting issues are created (e.g., `TSC`, `node`, `community-committee`).
+</ParamField>
+
+<ParamField path="GROUP_NAME" type="string" required>
+  The full human-readable name of the group. Used in the meeting issue title (e.g., `Node.js Technical Steering Committee (TSC) Meeting 2025-01-15`).
+</ParamField>
+
+<ParamField path="AGENDA_TAG" type="string" required>
+  The GitHub label used to search for agenda items across the organization. Issues and pull requests carrying this label are automatically included in the meeting agenda.
+</ParamField>
+
+<ParamField path="HOST" type="string">
+  A prefix for the meeting title. Defaults to `Node.js` if not set. The generated title format is `{HOST} {GROUP_NAME} Meeting {YYYY-MM-DD}`.
+</ParamField>
+
+<ParamField path="JOINING_INSTRUCTIONS" type="string">
+  Multi-line markdown content with instructions for joining the meeting. Typically includes a Zoom link, a YouTube live stream link, and attendance confirmation instructions. Substituted for `$JOINING_INSTRUCTIONS$` in the meeting issue.
+</ParamField>
+
+<ParamField path="ISSUE_LABEL" type="string">
+  An optional GitHub label to apply to the created meeting issue itself. Useful for filtering issues by meeting type in the repository.
+</ParamField>
+
+<ParamField path="HACKMD_TEAM_NAME" type="string">
+  The HackMD team namespace under which the meeting minutes document is created (e.g., `openjs-nodejs`). Required if you use the HackMD integration.
+</ParamField>
+
+## Example: TSC meeting base file
+
+The following is the actual `meeting_base_tsc` file:
+
+```text
+CALENDAR_FILTER="Node.js TSC Meeting"
+ICAL_URL="https://calendar.google.com/calendar/ical/c_16f0ae5d3a22625175d199dbdb1cac84c2d09eab7f173e94f558417cb5cdbfd8%40group.calendar.google.com/public/basic.ics"
+USER="nodejs"
+REPO="TSC"
+HOST="Node.js"
+GROUP_NAME="Technical Steering Committee (TSC)"
+HACKMD_TEAM_NAME="openjs-nodejs"
+JOINING_INSTRUCTIONS="
+
+Zoom link: <https://zoom.us/j/611357642>
+Regular password
+
+## Public participation
+
+We stream our conference call straight to YouTube so anyone can listen to it live, it should start playing at **<https://www.youtube.com/c/nodejs+foundation/live>** when we turn it on. There's usually a short cat-herding time at the start of the meeting and then occasionally we have some quick private business to attend to before we can start recording & streaming. So be patient and it should show up.
+
+
+---
+
+**Invitees**
+
+Please use the following emoji reactions in this post to indicate your
+availability.
+
+* :+1: - Attending
+* :-1: - Not attending
+* :confused: - Not sure yet
+"
+```
+
+<Note>
+  The `JOINING_INSTRUCTIONS` value spans multiple lines and is wrapped in double quotes. The dotenv `parse()` function handles multi-line quoted strings correctly, preserving newlines within the value.
+</Note>

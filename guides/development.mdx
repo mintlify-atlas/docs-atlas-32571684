@@ -1,0 +1,170 @@
+---
+title: 'Development Guide'
+description: 'How to set up a local development environment, run code quality checks, execute tests, and understand the project structure.'
+---
+
+## Local setup
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/nodejs/create-node-meeting-artifacts.git
+    cd create-node-meeting-artifacts
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+
+    The project uses Node.js 22 or later. Check your version with `node --version`. If you use nvm, the repository includes an `.nvmrc` file:
+
+    ```bash
+    nvm use
+    ```
+  </Step>
+
+  <Step title="Configure environment variables">
+    Copy the example environment file and fill in your tokens:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Open `.env` and set the following:
+
+    | Variable | Description |
+    | --- | --- |
+    | `GITHUB_TOKEN` | GitHub Personal Access Token with `repo` and `user` scopes |
+    | `HACKMD_API_TOKEN` | HackMD API token from Account Settings > API Tokens |
+  </Step>
+
+  <Step title="Run the tool locally">
+    Use `npm run dev` to invoke the CLI with your `.env` file loaded automatically:
+
+    ```bash
+    npm run dev -- tsc --dry-run
+    ```
+
+    The `dev` script is defined in `package.json` as:
+
+    ```json
+    "dev": "node --env-file=.env create-node-meeting-artifacts.mjs"
+    ```
+
+    You can also call individual group scripts directly:
+
+    ```bash
+    npm run tsc-meeting:dev
+    ```
+  </Step>
+</Steps>
+
+## Code quality
+
+The project enforces consistent style with ESLint and Prettier. Both are checked in CI via the `test.yml` workflow.
+
+<CodeGroup>
+
+```bash ESLint
+# Check for lint errors
+npm run lint
+
+# Fix lint errors automatically
+npm run lint:fix
+```
+
+```bash Prettier
+# Format all files
+npm run format
+
+# Check formatting without writing changes
+npm run format:check
+```
+
+```bash Combined
+# Run both lint and format:check together
+npm run check
+```
+
+</CodeGroup>
+
+ESLint is configured in `eslint.config.mjs` using the flat config format. It enforces:
+
+- `@eslint/js` recommended rules
+- `eslint-plugin-import-x` for import ordering (builtin → external → internal → sibling/parent → index)
+- `eslint-plugin-jsdoc` requiring JSDoc on all functions, arrow functions, methods, and classes
+- `object-shorthand` for concise object literals
+
+Prettier is configured in `.prettierrc.json`:
+
+```json
+{
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "arrowParens": "avoid"
+}
+```
+
+## Testing
+
+The project uses the Node.js built-in test runner (`node:test`), which requires no additional test framework dependencies.
+
+<CodeGroup>
+
+```bash Run tests
+npm test
+```
+
+```bash Watch mode
+npm run test:watch
+```
+
+```bash Coverage report
+npm run test:coverage
+```
+
+</CodeGroup>
+
+The `test:coverage` command uses the `--experimental-test-coverage` flag, which is available in Node.js 22 without a flag in later releases.
+
+CI runs the full test suite on Node.js 22.x and `latest` for every push and pull request to `main`.
+
+## Project structure
+
+```
+create-node-meeting-artifacts/
+├── create-node-meeting-artifacts.mjs  # CLI entry point
+├── src/
+│   ├── config.mjs                     # Environment configuration
+│   ├── constants.mjs                  # Application constants and defaults
+│   ├── calendar.mjs                   # iCal fetching and event filtering
+│   ├── meeting.mjs                    # Meeting content generation
+│   ├── github.mjs                     # GitHub API integration (Octokit)
+│   ├── hackmd.mjs                     # HackMD API integration
+│   └── utils/
+│       ├── dates.mjs                  # Date formatting and timezone helpers
+│       ├── templates.mjs              # Template variable substitution
+│       └── urls.mjs                   # Time zone link generation
+├── templates/                         # Meeting group template files
+├── .github/workflows/
+│   ├── create-meeting-artifacts-manual.yml    # Manual dispatch workflow
+│   ├── create-meeting-artifacts-scheduled.yml # Daily scheduled workflow
+│   └── test.yml                               # CI: lint, test, format
+├── eslint.config.mjs                  # ESLint flat config
+├── .prettierrc.json                   # Prettier config
+├── .nvmrc                             # Node.js version pin
+└── .env.example                       # Environment variable template
+```
+
+### Module notes
+
+- **ESM throughout**: `package.json` sets `"type": "module"`, and all source files use the `.mjs` extension. There are no CommonJS files.
+- **CLI entry point**: `create-node-meeting-artifacts.mjs` uses `commander` to parse arguments and options, then calls into the `src/` modules sequentially.
+- **Runtime requirement**: Node.js 22 or later is required. The `engines` field in `package.json` enforces this: `"node": ">=22.0.0"`.
+- **No transpilation**: The project runs directly on Node.js with no build step. What you see in `src/` is what runs in production.

@@ -1,0 +1,61 @@
+---
+title: Introduction
+description: Learn what the Node.js Meeting Artifacts Creator does, how it works, and what you need to get started.
+---
+
+The Node.js Meeting Artifacts Creator is a CLI tool that automates the preparation work for Node.js team meetings. Before each meeting, someone must create a GitHub issue to track the agenda and a HackMD document for collaborative notes. This tool does both in a single command.
+
+Without this tool, that process involves manually copying templates, filling in dates and agenda items, creating documents in two separate systems, and cross-linking them. The tool handles all of that automatically.
+
+## How it works
+
+When you run the tool for a meeting group, it executes the following sequence:
+
+1. Reads the meeting configuration from a template file in the `templates/` directory
+2. Fetches the group's public iCalendar feed to find the next scheduled meeting date
+3. Queries GitHub for open issues tagged with the group's agenda label
+4. Creates a HackMD document for collaborative meeting minutes
+5. Creates (or updates) a GitHub issue with the meeting details, agenda items, and a link to the HackMD document
+6. Updates the HackMD document with a back-link to the GitHub issue
+
+The result is two linked documents — a GitHub issue and a HackMD note — ready before the meeting starts.
+
+## Architecture overview
+
+The application is composed of six source modules under `src/`:
+
+| Module | File | Responsibility |
+|---|---|---|
+| Config | `src/config.mjs` | Reads environment variables and resolves directory paths |
+| Calendar | `src/calendar.mjs` | Fetches and parses iCalendar feeds, finds the next meeting date |
+| Meeting | `src/meeting.mjs` | Generates issue content, minutes content, titles, and agendas |
+| GitHub | `src/github.mjs` | Creates and updates GitHub issues, fetches agenda-tagged issues |
+| HackMD | `src/hackmd.mjs` | Creates and updates HackMD notes via the HackMD API |
+| Utils | `src/utils.mjs` | Shared utility functions used across modules |
+
+The main entry point, `create-node-meeting-artifacts.mjs`, wires these modules together using the `commander` CLI framework.
+
+## Requirements
+
+Before you can use the tool, you need:
+
+- **Node.js 22 or later** — the tool uses native ESM modules and requires Node.js 22+
+- **GitHub Personal Access Token** — needs the `repo` scope to create issues and read agenda-tagged issues
+- **HackMD API Token** — obtained from your HackMD account settings, used to create and update meeting notes documents
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Clone the repository, set up your tokens, and run the tool for the first time.
+  </Card>
+  <Card title="Installation" icon="wrench" href="/installation">
+    Detailed setup instructions including Node.js version management and token configuration.
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration">
+    Learn about environment variables, meeting base files, and optional settings.
+  </Card>
+  <Card title="Templates" icon="file" href="/templates">
+    Understand the four template files each meeting group requires and how to create new ones.
+  </Card>
+</CardGroup>

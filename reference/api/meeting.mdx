@@ -1,0 +1,207 @@
+---
+title: "Meeting module API"
+description: "API reference for src/meeting.mjs — meeting content generation functions"
+---
+
+The `meeting.mjs` module is responsible for reading group-specific template files and generating the markdown content for GitHub issues and HackMD meeting minutes.
+
+## `readMeetingConfig(config)`
+
+Reads and parses the meeting configuration from template files for the specified group.
+
+```javascript
+import * as meetings from './src/meeting.mjs';
+
+const meetingConfig = await meetings.readMeetingConfig(config);
+```
+
+### Parameters
+
+<ParamField path="config" type="AppConfig" required>
+  The application configuration object. The function reads `config.meetingGroup` (the CLI argument) and `config.directories.templates` (the path to the templates directory).
+</ParamField>
+
+### Returns
+
+`Promise<MeetingConfig>` — an object with the following fields:
+
+<ResponseField name="invited" type="string" required>
+  Raw contents of the `invited_<group>` template file. A markdown-formatted list of invited attendees.
+</ResponseField>
+
+<ResponseField name="observers" type="string" required>
+  Raw contents of the `observers_<group>` template file. A markdown-formatted list of observers.
+</ResponseField>
+
+<ResponseField name="baseMeetingInfo" type="string" required>
+  Raw contents of the `meeting_base_<group>` template file as a string.
+</ResponseField>
+
+<ResponseField name="properties" type="MeetingProperties" required>
+  The `meeting_base_<group>` file parsed as dotenv key-value pairs. Common keys include `GROUP_NAME`, `REPO`, `USER`, `ICAL_URL`, `CALENDAR_FILTER`, `AGENDA_TAG`, `ISSUE_LABEL`, `HACKMD_TEAM_NAME`, and `JOINING_INSTRUCTIONS`.
+</ResponseField>
+
+---
+
+## `generateMeetingTitle(config, meetingConfig, meetingDate)`
+
+Builds the canonical meeting title string used for both the GitHub issue title and the HackMD document title.
+
+```javascript
+const title = meetings.generateMeetingTitle(config, meetingConfig, meetingDate);
+// e.g. "Node.js Technical Steering Committee (TSC) Meeting 2025-03-19"
+```
+
+### Parameters
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Used as a fallback for `meetingGroup` when `GROUP_NAME` is not set in the template.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration returned by `readMeetingConfig`. The function reads `meetingConfig.properties.HOST` and `meetingConfig.properties.GROUP_NAME`.
+</ParamField>
+
+<ParamField path="meetingDate" type="Date" required>
+  The date of the upcoming meeting. The UTC date portion (`YYYY-MM-DD`) is appended to the title.
+</ParamField>
+
+### Returns
+
+`string` — a title in the format `"<HOST> <GROUP_NAME> Meeting <YYYY-MM-DD>"`. `HOST` defaults to `"Node.js"` when not set in the template; `GROUP_NAME` defaults to the raw `meetingGroup` shortname.
+
+---
+
+## `generateMeetingAgenda(agendaIssues)`
+
+Formats a collection of GitHub issues into a markdown agenda section.
+
+```javascript
+const agenda = meetings.generateMeetingAgenda(agendaIssues);
+```
+
+### Parameters
+
+<ParamField path="agendaIssues" type="Record<string, GitHubIssue[]>" required>
+  An object mapping repository paths (e.g., `"nodejs/node"`) to arrays of GitHub issue objects. Produced by [`getAgendaIssues`](/reference/api/github#getagendaissues).
+</ParamField>
+
+### Returns
+
+`string` — markdown text. Each repository with at least one issue gets a `### repoName` heading followed by a bullet list in the format `* title [#number](html_url)`. Markdown bracket characters in issue titles are escaped. Returns an empty string if there are no issues.
+
+---
+
+## `generateMeetingIssue(config, meetingConfig, meetingDate, meetingAgenda, minutesDocLink)`
+
+Reads the `templates/meeting_issue.md` template and substitutes all placeholder variables to produce the full GitHub issue body.
+
+```javascript
+const issueBody = await meetings.generateMeetingIssue(
+  config,
+  meetingConfig,
+  meetingDate,
+  meetingAgenda,
+  minutesDocLink
+);
+```
+
+### Parameters
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Used to resolve the templates directory and meeting group name.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration returned by `readMeetingConfig`. Provides `invited`, `observers`, and all `properties`.
+</ParamField>
+
+<ParamField path="meetingDate" type="Date" required>
+  The date of the meeting. Used to format the UTC time, generate the timezone conversion table, and produce time.anddate.com and Wolfram Alpha links.
+</ParamField>
+
+<ParamField path="meetingAgenda" type="string" required>
+  The formatted agenda string returned by `generateMeetingAgenda`. Falls back to `'*No agenda items found.*'` when empty.
+</ParamField>
+
+<ParamField path="minutesDocLink" type="string" required>
+  The URL of the HackMD minutes document. Substituted into the template as `MINUTES_DOC`. Pass an empty string in `--dry-run` mode.
+</ParamField>
+
+### Returns
+
+`Promise<string>` — the fully substituted issue body as a markdown string.
+
+The following template variables are substituted:
+
+| Variable | Value |
+|----------|-------|
+| `UTC_TIME` | Formatted UTC date/time of the meeting |
+| `TIMEZONE_TABLE` | Markdown table of times across 12 timezones |
+| `TIME_AND_DATE_LINK` | Link to timeanddate.com converter |
+| `WOLFRAM_ALPHA_LINK` | Link to Wolfram Alpha time converter |
+| `AGENDA_LABEL` | Issue label used for agenda items (`AGENDA_TAG` or `<group>-agenda`) |
+| `GITHUB_ORG` | GitHub organisation (`USER` property or `"nodejs"`) |
+| `AGENDA_CONTENT` | Formatted agenda markdown |
+| `INVITEES` | Contents of `invited_<group>` |
+| `JOINING_INSTRUCTIONS` | Meeting join link from `meeting_base_<group>` |
+| `MINUTES_DOC` | HackMD document URL |
+| `OBSERVERS` | Contents of `observers_<group>` |
+
+---
+
+## `generateMeetingMinutes(config, meetingConfig, meetingTitle, meetingAgenda, minutesDocLink, githubIssueLink)`
+
+Reads the `templates/minutes_base_<group>` template and substitutes all placeholder variables to produce the HackMD minutes document content.
+
+```javascript
+const minutesContent = await meetings.generateMeetingMinutes(
+  config,
+  meetingConfig,
+  meetingTitle,
+  meetingAgenda,
+  minutesDocLink,
+  githubIssue.html_url
+);
+```
+
+### Parameters
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Used to resolve the templates directory and the meeting group shortname.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration returned by `readMeetingConfig`. Provides `invited` and `observers` lists.
+</ParamField>
+
+<ParamField path="meetingTitle" type="string" required>
+  The meeting title string returned by `generateMeetingTitle`. Substituted as `TITLE`.
+</ParamField>
+
+<ParamField path="meetingAgenda" type="string" required>
+  The formatted agenda string returned by `generateMeetingAgenda`. Substituted as `AGENDA_CONTENT`.
+</ParamField>
+
+<ParamField path="minutesDocLink" type="string" required>
+  The URL of the HackMD document itself. Substituted as `MINUTES_DOC` (used for self-referencing within the document).
+</ParamField>
+
+<ParamField path="githubIssueLink" type="string" required>
+  The `html_url` of the created or updated GitHub issue. Substituted as `GITHUB_ISSUE`.
+</ParamField>
+
+### Returns
+
+`Promise<string>` — the fully substituted minutes document content as a markdown string.
+
+The following template variables are substituted:
+
+| Variable | Value |
+|----------|-------|
+| `TITLE` | Meeting title |
+| `AGENDA_CONTENT` | Formatted agenda markdown |
+| `INVITED` | Contents of `invited_<group>` |
+| `OBSERVERS` | Contents of `observers_<group>` |
+| `MINUTES_DOC` | HackMD document URL |
+| `GITHUB_ISSUE` | GitHub issue URL |

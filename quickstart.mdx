@@ -1,80 +1,119 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Get create-node-meeting-artifacts running in under 5 minutes."
 ---
 
-## Get started in three steps
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/nodejs/create-node-meeting-artifacts.git
+    cd create-node-meeting-artifacts
+    ```
+  </Step>
 
-Get your documentation site running locally and make your first customization.
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
 
-### Step 1: Set up your local environment
+    The tool requires Node.js 22 or later. Check your version with `node --version`. If needed, use a version manager like [nvm](https://github.com/nvm-sh/nvm) and run `nvm use` to pick up the `.nvmrc` version.
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Set up environment variables">
+    Copy the example environment file and add your credentials:
 
-### Step 2: Deploy your changes
+    ```bash
+    cp .env.example .env
+    ```
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    Open `.env` and fill in your tokens:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```bash .env
+    GITHUB_TOKEN=your_github_personal_access_token
+    HACKMD_API_TOKEN=your_hackmd_api_token
+    ```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    - **GITHUB_TOKEN** — A [GitHub Personal Access Token](https://github.com/settings/tokens) with `repo` scope
+    - **HACKMD_API_TOKEN** — From [HackMD](https://hackmd.io/) → Account Settings → API Tokens
 
-### Step 3: Go live
+    <Warning>
+      Never commit your `.env` file. It is already listed in `.gitignore`.
+    </Warning>
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Run for a meeting group">
+    Pass the meeting group shortname as the first argument. For example, to create artifacts for the TSC:
+
+    <CodeGroup>
+      ```bash node
+      node --env-file=.env create-node-meeting-artifacts.mjs tsc
+      ```
+
+      ```bash npx
+      npx --env-file=.env . tsc
+      ```
+
+      ```bash npm script
+      npm run tsc-meeting:dev
+      ```
+    </CodeGroup>
+
+    The tool will:
+    1. Read templates for the `tsc` group from the `templates/` directory
+    2. Fetch the TSC calendar to find the next meeting date
+    3. Search GitHub for open issues labeled `tsc-agenda`
+    4. Create a HackMD document with the meeting minutes template
+    5. Create or update a GitHub issue with the meeting details and HackMD link
+  </Step>
+
+  <Step title="Preview output without side effects">
+    Use `--dry-run` to see what the GitHub issue would look like without creating anything:
+
+    ```bash
+    node --env-file=.env create-node-meeting-artifacts.mjs tsc --dry-run
+    ```
+
+    <Note>
+      Dry-run still fetches agenda issues from GitHub (requires a valid `GITHUB_TOKEN`), but skips all write operations — no GitHub issues or HackMD documents are created.
+    </Note>
+  </Step>
+</Steps>
+
+## Expected output
+
+When the tool runs successfully, you'll see:
+
+```
+Created GitHub issue: https://github.com/nodejs/node/issues/12345
+Created HackMD document: https://hackmd.io/AbCdEfGhIj
+```
+
+Both documents are cross-linked: the GitHub issue contains the HackMD link, and the HackMD document contains the GitHub issue URL.
+
+## When no meeting is found
+
+If no meeting is scheduled in the next 7 days, the tool exits cleanly:
+
+```
+No meeting found for Node.js TSC in the next week (2025-01-13 to 2025-01-20).
+This is expected for bi-weekly meetings or meetings that don't occur every week.
+```
+
+This is normal for groups that meet every other week.
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Configuration" icon="gear" href="/configuration/environment-variables">
+    Configure environment variables and meeting templates.
+  </Card>
+  <Card title="Adding a Meeting Group" icon="users" href="/guides/adding-meeting-group">
+    Set up templates for a new Node.js working group.
+  </Card>
+  <Card title="Dry Run Guide" icon="eye" href="/guides/dry-run">
+    Learn how to preview meeting artifacts before publishing.
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/reference/cli">
+    See all commands, flags, and usage examples.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

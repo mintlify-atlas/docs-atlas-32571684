@@ -1,0 +1,143 @@
+---
+title: "Meeting base configuration"
+description: "Define per-group metadata in meeting_base_<shortname> template files to control how meeting artifacts are generated."
+---
+
+Each meeting group you support requires a `meeting_base_<shortname>` file in your templates directory. This file is a dotenv-style key-value file parsed by the [`dotenv`](https://github.com/motdotla/dotenv) library's `parse()` function at runtime.
+
+The `<shortname>` portion of the filename is the identifier you pass to the CLI:
+
+```bash
+node create-node-meeting-artifacts.mjs tsc
+#                                       ^^^
+#                                       reads templates/meeting_base_tsc
+```
+
+## File format
+
+The file uses standard dotenv syntax. Quote values that contain spaces or newlines. Multi-line values are supported using double quotes with embedded newlines.
+
+```bash templates/meeting_base_<shortname>
+CALENDAR_FILTER="Name of Calendar Events"
+ICAL_URL="https://calendar.google.com/..."
+USER="nodejs"
+REPO="my-repo"
+GROUP_NAME="My Working Group"
+AGENDA_TAG=my-wg-agenda
+HOST="Node.js"
+HACKMD_TEAM_NAME="openjs-nodejs"
+JOINING_INSTRUCTIONS="
+
+* Zoom link: https://zoom.us/j/...
+* Live stream: https://www.youtube.com/...
+"
+```
+
+<Note>
+  Unlike environment variables, these values are not set in the process environment. They are read from the file using `dotenv.parse()` and passed directly to the artifact generation functions.
+</Note>
+
+## Properties
+
+### Required
+
+<ParamField path="CALENDAR_FILTER" type="string" required>
+  The exact name of the calendar events used to identify this group's meetings. The CLI searches the iCal feed for events whose summary matches this string to determine the next meeting date and time.
+</ParamField>
+
+<ParamField path="ICAL_URL" type="string" required>
+  The iCal (`.ics`) URL for the group's calendar. This is fetched at runtime to find upcoming meeting events. Google Calendar public iCal URLs work directly.
+</ParamField>
+
+<ParamField path="REPO" type="string" required>
+  The GitHub repository name (without the owner prefix) where meeting issues are created. For example, `TSC` creates issues in `nodejs/TSC`.
+</ParamField>
+
+<ParamField path="GROUP_NAME" type="string" required>
+  The full display name of the group as it appears in meeting issue titles and HackMD documents. For example, `Technical Steering Committee (TSC)`.
+</ParamField>
+
+### Optional
+
+<ParamField path="USER" type="string" default="nodejs">
+  The GitHub organization or user that owns the target repository. Defaults to `nodejs` as defined in `src/constants.mjs`.
+</ParamField>
+
+<ParamField path="AGENDA_TAG" type="string">
+  The GitHub issue/PR label used to collect agenda items before the meeting. If omitted, the CLI falls back to a label derived from the group shortname (e.g., `tsc-agenda`). Set this explicitly when the label follows a different convention.
+</ParamField>
+
+<ParamField path="HOST" type="string" default="Node.js">
+  A prefix used in meeting issue and document titles. Defaults to `Node.js`.
+</ParamField>
+
+<ParamField path="JOINING_INSTRUCTIONS" type="string">
+  Multi-line markdown content included in the meeting issue body with instructions for joining the call. Supports Zoom links, YouTube live stream URLs, and any other participation details. Wrap the entire value in double quotes to preserve newlines.
+</ParamField>
+
+<ParamField path="ISSUE_LABEL" type="string">
+  An optional GitHub label applied to the created meeting issue itself. Useful for filtering or tracking meeting issues in project boards.
+</ParamField>
+
+<ParamField path="HACKMD_TEAM_NAME" type="string">
+  The HackMD team workspace slug where meeting notes documents are created. For example, `openjs-nodejs` creates notes in the `@openjs-nodejs` team space. If omitted, documents are created in your personal HackMD space.
+</ParamField>
+
+## Complete example
+
+This is the actual `meeting_base_tsc` file from the repository, which configures artifacts for Node.js TSC meetings:
+
+```bash templates/meeting_base_tsc
+CALENDAR_FILTER="Node.js TSC Meeting"
+ICAL_URL="https://calendar.google.com/calendar/ical/c_16f0ae5d3a22625175d199dbdb1cac84c2d09eab7f173e94f558417cb5cdbfd8%40group.calendar.google.com/public/basic.ics"
+USER="nodejs"
+REPO="TSC"
+HOST="Node.js"
+GROUP_NAME="Technical Steering Committee (TSC)"
+HACKMD_TEAM_NAME="openjs-nodejs"
+JOINING_INSTRUCTIONS="
+
+Zoom link: <https://zoom.us/j/611357642>
+Regular password
+
+## Public participation
+
+We stream our conference call straight to YouTube so anyone can listen to it live,
+it should start playing at **<https://www.youtube.com/c/nodejs+foundation/live>** when
+we turn it on. There's usually a short cat-herding time at the start of the meeting
+and then occasionally we have some quick private business to attend to before we can
+start recording & streaming. So be patient and it should show up.
+
+
+---
+
+**Invitees**
+
+Please use the following emoji reactions in this post to indicate your availability.
+
+* :+1: - Attending
+* :-1: - Not attending
+* :confused: - Not sure yet
+"
+```
+
+## Adding a new meeting group
+
+<Steps>
+  <Step title="Create the file">
+    Create `templates/meeting_base_<shortname>` in your repository, replacing `<shortname>` with a short identifier (e.g., `wpt`, `security`, `release`).
+  </Step>
+  <Step title="Fill in the required fields">
+    At a minimum, set `CALENDAR_FILTER`, `ICAL_URL`, `REPO`, and `GROUP_NAME`.
+  </Step>
+  <Step title="Test with a dry run">
+    Run the CLI with `--dry-run` to verify the configuration without creating any GitHub issues or HackMD documents:
+
+    ```bash
+    node --env-file=.env create-node-meeting-artifacts.mjs <shortname> --dry-run --verbose
+    ```
+  </Step>
+  <Step title="Add to the scheduled workflow">
+    The scheduled GitHub Actions workflow automatically discovers all `meeting_base_*` files, so no additional workflow changes are needed. See [GitHub Actions integration](/configuration/github-actions).
+  </Step>
+</Steps>

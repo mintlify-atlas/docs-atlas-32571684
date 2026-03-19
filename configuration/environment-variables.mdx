@@ -1,0 +1,96 @@
+---
+title: "Environment variables"
+description: "Configure the required and optional environment variables for the Node.js Meeting Artifacts Creator CLI."
+---
+
+The CLI reads its configuration exclusively from environment variables via `src/config.mjs`. No configuration files are parsed automatically — you pass variables through your shell environment or an `.env` file loaded with Node.js's built-in `--env-file` flag.
+
+## Required variables
+
+Both of these variables must be set for the CLI to create GitHub issues and HackMD documents.
+
+<ParamField path="GITHUB_TOKEN" type="string" required>
+  A GitHub Personal Access Token (or a GitHub App installation token) with `repo` scope. This is used to read agenda-labelled issues and to create the meeting issue in the target repository.
+</ParamField>
+
+<ParamField path="HACKMD_API_TOKEN" type="string" required>
+  A HackMD API token used to create and manage meeting notes documents. Generate one from your HackMD account settings under **API**.
+</ParamField>
+
+## Optional variables
+
+<ParamField path="MEETINGS_CONFIG_DIR" type="string" default="./">
+  Directory where the CLI looks for `meeting_base_*` template files. Defaults to the current working directory. Set this if your templates live in a non-standard location.
+</ParamField>
+
+<ParamField path="MEETINGS_OUTPUT_DIR" type="string" default="~/.make-node-meeting">
+  Directory where the CLI writes generated output files. Defaults to `~/.make-node-meeting` (resolved via `os.homedir()` at runtime).
+</ParamField>
+
+## The .env.example file
+
+The repository ships with an `.env.example` you can copy as a starting point:
+
+```bash .env.example
+# Required: GitHub Token (Needs "repo" permissions)
+# GITHUB_TOKEN=your_personal_access_token_or_org_token
+
+# Required: HackMD Configuration
+# HACKMD_API_TOKEN=your_hackmd_api_token
+# HACKMD_TEAM_NAME=your_hackmd_team_name_optional # Defaults to your own personal space
+```
+
+Copy it and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+<Note>
+  `HACKMD_TEAM_NAME` appears in `.env.example` for reference but is actually defined per meeting group inside each `meeting_base_*` template file, not as a global environment variable. See [Meeting base configuration](/configuration/meeting-base) for details.
+</Note>
+
+## Loading variables at runtime
+
+Node.js 20.6+ has built-in support for `.env` files. You do not need the `dotenv` package for CLI usage.
+
+```bash
+node --env-file=.env create-node-meeting-artifacts.mjs tsc
+```
+
+For scripts and CI, export variables directly in your shell:
+
+```bash
+export GITHUB_TOKEN="ghp_..."
+export HACKMD_API_TOKEN="..."
+node create-node-meeting-artifacts.mjs tsc
+```
+
+<Tip>
+  In GitHub Actions, store secrets under **Settings → Secrets and variables → Actions** and reference them with `${{ secrets.GITHUB_TOKEN }}`. See [GitHub Actions integration](/configuration/github-actions) for a full workflow example.
+</Tip>
+
+## How configuration is loaded
+
+All environment variables are read once at startup in `src/config.mjs` and exposed as a single configuration object:
+
+```javascript src/config.mjs
+import { homedir } from 'node:os';
+import { join, dirname } from 'node:path';
+
+const defaultMeetingsDirectory = join(homedir(), '.make-node-meeting');
+
+export default {
+  githubToken: process.env.GITHUB_TOKEN,
+  hackmd: {
+    apiToken: process.env.HACKMD_API_TOKEN,
+  },
+  directories: {
+    config: process.env.MEETINGS_CONFIG_DIR || './',
+    output: process.env.MEETINGS_OUTPUT_DIR || defaultMeetingsDirectory,
+    templates: join(dirname(import.meta.dirname), 'templates'),
+  },
+};
+```
+
+The `templates` directory path is always resolved relative to the package itself and cannot be overridden via an environment variable.

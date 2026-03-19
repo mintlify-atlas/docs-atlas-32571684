@@ -1,0 +1,170 @@
+---
+title: 'Adding a New Meeting Group'
+description: 'How to add a new meeting group to the Node.js Meeting Artifacts Creator, including template files, GitHub Actions workflows, and npm scripts.'
+---
+
+To add a new meeting group, you need to do three things: create four template files, register the group in both GitHub Actions workflows, and add npm scripts to `package.json`.
+
+<Steps>
+  <Step title="Create the four template files">
+    All template files live in the `templates/` directory and follow a strict naming convention using a short identifier for your group — referred to here as `<shortname>`.
+
+    **`templates/invited_<shortname>`**
+
+    A list of GitHub team mentions for everyone who is always invited to the meeting. Typically a single line referencing a GitHub Team.
+
+    ```text
+    * TSC Members: @nodejs/tsc
+    ```
+
+    **`templates/observers_<shortname>`**
+
+    A list of observers who consistently attend but are not full members. This file can be empty if there are no standing observers.
+
+    ```text
+    * @therebelrobot (Oz Haven - observer)
+    * @ParidelPooya (Pooya Paridel - observer)
+    ```
+
+    **`templates/meeting_base_<shortname>`**
+
+    A dotenv-format config file containing the meeting's calendar and GitHub metadata. This file is parsed by `dotenv` at runtime.
+
+    ```bash
+    CALENDAR_FILTER="Node.js My Group Meeting"
+    ICAL_URL="https://calendar.google.com/calendar/ical/...public/basic.ics"
+    USER="nodejs"
+    REPO="my-group"
+    GROUP_NAME="My Group"
+    AGENDA_TAG=my-group-agenda
+    HACKMD_TEAM_NAME="openjs-nodejs"
+    JOINING_INSTRUCTIONS="
+
+    * link for participants: Will be added a few minutes before meeting starts
+    * For those who just want to watch: https://www.youtube.com/channel/UCQPYJluYC_sn_Qz_XE-YbTQ/live"
+    ```
+
+    | Property | Description |
+    | --- | --- |
+    | `CALENDAR_FILTER` | Exact name of the calendar event to match |
+    | `ICAL_URL` | iCal URL for the group's calendar feed |
+    | `USER` | GitHub organization (typically `nodejs`) |
+    | `REPO` | Repository where meeting issues are created |
+    | `GROUP_NAME` | Full display name of the group |
+    | `AGENDA_TAG` | GitHub label used to collect agenda items |
+    | `HACKMD_TEAM_NAME` | HackMD team workspace for minutes documents |
+    | `JOINING_INSTRUCTIONS` | Zoom link, YouTube stream URL, or other join info |
+
+    **`templates/minutes_base_<shortname>`**
+
+    A HackMD-compatible Markdown template for the meeting minutes document. Use the template variables listed below — they are substituted at runtime.
+
+    ```markdown
+    # $TITLE$
+
+    ## Links
+
+    * **Recording**:
+    * **GitHub Issue**: $GITHUB_ISSUE$
+    * **Minutes**: $MINUTES_DOC$
+
+    ## Present
+
+    $INVITED$
+    $OBSERVERS$
+
+    ## Agenda
+
+    ### Announcements
+
+    *Extracted from **my-group-agenda** labelled issues and pull requests from the **nodejs org** prior to the meeting.*
+
+    $AGENDA_CONTENT$
+
+    ## Q&A, Other
+
+    ## Upcoming Meetings
+
+    * **Node.js Foundation Calendar**: https://nodejs.org/calendar
+
+    Click `Add to Google Calendar` at the bottom left to add to your own Google calendar.
+    ```
+
+    The supported template variables are:
+
+    | Variable | Description |
+    | --- | --- |
+    | `$TITLE$` | Generated meeting title including date |
+    | `$AGENDA_CONTENT$` | Markdown list of agenda issues from GitHub |
+    | `$INVITED$` | Contents of `invited_<shortname>` |
+    | `$OBSERVERS$` | Contents of `observers_<shortname>` |
+    | `$GITHUB_ISSUE$` | URL of the created GitHub issue |
+    | `$MINUTES_DOC$` | URL of the HackMD minutes document |
+  </Step>
+
+  <Step title="Add the group to GitHub Actions workflows">
+    The scheduled workflow discovers groups automatically by scanning `templates/` for `meeting_base_*` files, so creating the template file in Step 1 is sufficient for scheduled runs.
+
+    For the **manual** workflow, you must also add the group as an allowed input value. Open `.github/workflows/create-meeting-artifacts-manual.yml` and add your shortname to the `workflow_dispatch` inputs:
+
+    ```yaml
+    on:
+      workflow_dispatch:
+        inputs:
+          meeting_group:
+            description: 'Meeting group to create artifacts for'
+            required: true
+            type: string
+    ```
+
+    The manual workflow accepts a free-form string input, so no additional options list is required — just dispatch the workflow with your group's shortname as the `meeting_group` value.
+
+    The **scheduled** workflow (`.github/workflows/create-meeting-artifacts-scheduled.yml`) automatically builds a matrix from all `meeting_base_*` files in `templates/`:
+
+    ```yaml
+    - name: Get config basenames
+      id: set-matrix
+      run: |
+        CONFIGS=$(find templates/ -maxdepth 1 -type f -name 'meeting_base_*' | \
+          jq -R -s -c 'split("\n")[:-1] | map(sub(".*meeting_base_";"")')
+        echo "configs=$CONFIGS" >> $GITHUB_OUTPUT
+    ```
+
+    Because the matrix is derived dynamically, your new group is picked up automatically once the `meeting_base_<shortname>` file exists.
+  </Step>
+
+  <Step title="Add npm scripts to package.json">
+    Add two entries to the `scripts` section of `package.json` — one for production use in CI and one for local development:
+
+    ```json
+    {
+      "scripts": {
+        "my-group-meeting": "node create-node-meeting-artifacts.mjs my_group",
+        "my-group-meeting:dev": "node --env-file=.env create-node-meeting-artifacts.mjs my_group"
+      }
+    }
+    ```
+
+    Use **kebab-case** for the script name (`my-group-meeting`) because npm script names follow shell conventions where hyphens are conventional word separators. Use **snake_case** for the group parameter (`my_group`) because the parameter maps directly to filenames in the `templates/` directory — for example, `meeting_base_my_group` — and underscores are safer in filenames across operating systems.
+
+    The `:dev` variant passes `--env-file=.env` so Node.js automatically loads your local credentials without needing to export environment variables manually.
+  </Step>
+</Steps>
+
+## Test the new group
+
+Before running the full workflow, verify your templates are correct with a dry run:
+
+```bash
+node --env-file=.env create-node-meeting-artifacts.mjs <shortname> --dry-run
+```
+
+This prints the generated issue content to the console without creating any GitHub issues or HackMD documents. See [Using Dry Run Mode](/guides/dry-run) for details on what dry run does and does not do.
+
+<Note>
+  You can get the `ICAL_URL` for a group's calendar from the [Node.js Foundation calendar](https://nodejs.org/calendar). On the calendar page, find the group's calendar, open its settings, and copy the iCal (`.ics`) subscription URL.
+</Note>
+
+<Warning>
+  The `CALENDAR_FILTER` value must match the calendar event name **exactly**, including capitalization and punctuation. If it does not match, the tool will find no meeting in the upcoming week and exit without creating any artifacts.
+</Warning>

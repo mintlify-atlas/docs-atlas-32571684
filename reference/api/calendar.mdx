@@ -1,0 +1,93 @@
+---
+title: "Calendar module API"
+description: "API reference for src/calendar.mjs — iCal calendar functions"
+---
+
+The `calendar.mjs` module fetches an iCal feed and locates the next occurrence of a recurring meeting within the coming week.
+
+<Note>
+  The tool sets `process.env.TZ = 'UTC'` on startup so that all date calculations in this module use UTC, regardless of the host machine's local timezone.
+</Note>
+
+## `getEventsFromCalendar(url)`
+
+Fetches an iCal feed from a URL and parses it into an array of calendar components.
+
+```javascript
+import * as calendar from './src/calendar.mjs';
+
+const events = await calendar.getEventsFromCalendar(meetingConfig.properties.ICAL_URL);
+```
+
+### Parameters
+
+<ParamField path="url" type="string" required>
+  The URL of the iCal feed to fetch. Configured per-group via the `ICAL_URL` property in `meeting_base_<group>`.
+</ParamField>
+
+### Returns
+
+`Promise<CalendarComponent[]>` — an array of calendar event objects parsed by the [`ical`](https://www.npmjs.com/package/ical) library. Each object may represent a `VEVENT`, `VTIMEZONE`, or other iCal component type. Use `findNextMeetingDate` to filter to the relevant event.
+
+---
+
+## `findNextMeetingDate(allEvents, meetingConfig)`
+
+Searches a list of calendar events for the next occurrence of the configured meeting within the next seven days.
+
+```javascript
+const meetingDate = await calendar.findNextMeetingDate(events, meetingConfig);
+
+if (!meetingDate) {
+  console.log('No meeting this week.');
+  process.exit(0);
+}
+```
+
+### Parameters
+
+<ParamField path="allEvents" type="CalendarComponent[]" required>
+  The full array of calendar components returned by `getEventsFromCalendar`.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration returned by `readMeetingConfig`. Reads `meetingConfig.properties.CALENDAR_FILTER` — a string that must appear in the event `summary` or `description` for the event to be considered a match.
+</ParamField>
+
+### Returns
+
+`Promise<Date | null>` — the `Date` of the first matching meeting occurrence in the next seven days, or `null` if no meeting is scheduled.
+
+**Filtering logic:**
+1. Keeps only events that have an `rrule` property (i.e., recurring events).
+2. Keeps only events whose `summary` or `description` includes the `CALENDAR_FILTER` string.
+3. For each matching event, calls `rrule.between(weekStart, weekEnd)` to find occurrences in the `[now, now + 7 days]` window.
+4. Returns the first occurrence found, or `null` if none exist.
+
+<Note>
+  The tool exits with code `0` when `null` is returned. This is expected behaviour for bi-weekly meetings or other groups that do not meet every week.
+</Note>
+
+---
+
+## `getNextWeek(start?)`
+
+Computes a seven-day date window starting from the given date.
+
+```javascript
+const [weekStart, weekEnd] = calendar.getNextWeek();
+// weekStart = now, weekEnd = now + 7 days
+
+const [from, to] = calendar.getNextWeek(new Date('2025-03-17'));
+// from = 2025-03-17, to = 2025-03-24
+```
+
+### Parameters
+
+<ParamField path="start" type="Date" default="new Date()">
+  The start of the window. Defaults to the current date and time if not provided.
+</ParamField>
+
+### Returns
+
+`[Date, Date]` — a tuple of `[start, start + 7 days]`. The end date is computed by adding 7 to the UTC date of `start`.

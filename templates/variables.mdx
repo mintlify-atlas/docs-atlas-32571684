@@ -1,0 +1,106 @@
+---
+title: "Template Variables"
+description: "Complete reference for all $VARIABLE$ substitutions available in meeting issue and minutes templates."
+---
+
+Template variables use the `$VARIABLE_NAME$` syntax and are replaced at generation time by the `parseVariables()` function in `src/utils/templates.mjs`. Substitution is a global string replacement — every occurrence of a variable in a template is replaced. Any variable that has no value is replaced with an empty string.
+
+## How substitution works
+
+```javascript
+// src/utils/templates.mjs
+export const parseVariables = (template, variables) => {
+  let processed = template;
+
+  for (const [key, value] of Object.entries(variables)) {
+    const placeholder = `$${key}$`;
+    processed = processed.replace(
+      new RegExp(placeholder.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), 'g'),
+      value || ''
+    );
+  }
+
+  // Replace any remaining placeholders with empty strings
+  processed = processed.replace(/\$[A-Z_]+\$/g, '');
+
+  return processed;
+};
+```
+
+Variables are passed as a plain object where keys match the variable names (without the `$` delimiters). If a value is falsy (`null`, `undefined`, or empty string), the placeholder is replaced with `''`.
+
+## Variables in `minutes_base_<shortname>`
+
+These variables are available when `generateMeetingMinutes()` processes the minutes template:
+
+<ParamField path="$TITLE$" type="string">
+  The generated meeting title. Constructed from the `HOST` and `GROUP_NAME` properties in `meeting_base_<shortname>` and the meeting date: `{HOST} {GROUP_NAME} Meeting {YYYY-MM-DD}`. Example: `Node.js Technical Steering Committee (TSC) Meeting 2025-01-15`.
+</ParamField>
+
+<ParamField path="$GITHUB_ISSUE$" type="string">
+  The full URL of the GitHub issue created for the meeting (e.g., `https://github.com/nodejs/TSC/issues/1234`). Available after the issue has been created.
+</ParamField>
+
+<ParamField path="$MINUTES_DOC$" type="string">
+  The full URL of the HackMD document for the meeting minutes (e.g., `https://hackmd.io/@openjs-nodejs/abc123`). Available after the HackMD document has been created.
+</ParamField>
+
+<ParamField path="$INVITED$" type="string">
+  The raw contents of the `invited_<shortname>` template file. Inserted verbatim into the **Present** section of the minutes.
+</ParamField>
+
+<ParamField path="$OBSERVERS$" type="string">
+  The raw contents of the `observers_<shortname>` template file. Inserted verbatim after `$INVITED$` in the **Present** section. Empty string if the observers file is empty.
+</ParamField>
+
+<ParamField path="$AGENDA_CONTENT$" type="string">
+  Auto-generated Markdown listing the GitHub issues and pull requests labelled with the group's `AGENDA_TAG`, grouped by repository. Each item is formatted as `* {title} [#{number}]({url})`. Empty if no agenda items are found.
+</ParamField>
+
+## Variables in `meeting_issue.md`
+
+These variables are available when `generateMeetingIssue()` processes the shared `meeting_issue.md` template:
+
+<ParamField path="$UTC_TIME$" type="string">
+  The meeting start time formatted in UTC, e.g. `15:00 UTC`. Derived from the calendar event.
+</ParamField>
+
+<ParamField path="$TIMEZONE_TABLE$" type="string">
+  A Markdown table body with rows for multiple timezones, each showing the equivalent local date and time. Used inside the pre-formatted table in `meeting_issue.md`.
+</ParamField>
+
+<ParamField path="$TIME_AND_DATE_LINK$" type="string">
+  A formatted Markdown link to a timeanddate.com page for the specific meeting time, allowing anyone to convert it to their local timezone.
+</ParamField>
+
+<ParamField path="$WOLFRAM_ALPHA_LINK$" type="string">
+  A formatted Markdown link to a Wolfram Alpha query for the meeting time, as an alternative timezone conversion tool.
+</ParamField>
+
+<ParamField path="$AGENDA_LABEL$" type="string">
+  The value of `AGENDA_TAG` from `meeting_base_<shortname>` (e.g., `tsc-agenda`). Used in the issue body to describe which label was used to collect agenda items.
+</ParamField>
+
+<ParamField path="$GITHUB_ORG$" type="string">
+  The GitHub organization name. Sourced from the `USER` property in `meeting_base_<shortname>` (typically `nodejs`).
+</ParamField>
+
+<ParamField path="$AGENDA_CONTENT$" type="string">
+  Same as in the minutes template: the auto-generated Markdown list of agenda items. Falls back to `*No agenda items found.*` when empty.
+</ParamField>
+
+<ParamField path="$INVITEES$" type="string">
+  The raw contents of the `invited_<shortname>` file. Inserted under the **Invited** heading in the meeting issue.
+</ParamField>
+
+<ParamField path="$JOINING_INSTRUCTIONS$" type="string">
+  The value of `JOINING_INSTRUCTIONS` from `meeting_base_<shortname>`. Inserted under the **Joining the meeting** heading. Can be multi-line Markdown.
+</ParamField>
+
+<ParamField path="$MINUTES_DOC$" type="string">
+  The full URL of the HackMD minutes document. Appears in the **Links** section of the meeting issue.
+</ParamField>
+
+<ParamField path="$OBSERVERS$" type="string">
+  The raw contents of the `observers_<shortname>` file. Inserted under the **Observers/Guests** heading in the meeting issue.
+</ParamField>

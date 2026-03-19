@@ -1,0 +1,84 @@
+---
+title: "Minutes Base Template"
+description: "The Markdown template for the HackMD meeting minutes document, pre-structured with standard sections."
+---
+
+The `minutes_base_<shortname>` template provides the initial structure for a group's HackMD meeting minutes document. When you run the CLI, `generateMeetingMinutes()` in `src/meeting.mjs` reads this file and replaces all [template variables](/templates/variables) with live data before uploading the result to HackMD.
+
+## File naming
+
+```text
+templates/minutes_base_<shortname>
+```
+
+For example: `templates/minutes_base_tsc`
+
+## Example: TSC minutes base file
+
+The following is the actual `minutes_base_tsc` file:
+
+```markdown
+# $TITLE$
+
+## Links
+
+* **Recording**:  
+* **GitHub Issue**: $GITHUB_ISSUE$
+* **Minutes**: $MINUTES_DOC$
+
+## Present
+
+$INVITED$
+$OBSERVERS$
+
+## Agenda
+
+### Announcements
+
+### Reminders
+
+* Remember to nominate people for the [contributor spotlight](https://github.com/nodejs/node/blob/main/doc/contributing/reconizing-contributors.md#bi-monthly-contributor-spotlight)
+
+### CPC and Board Meeting Updates
+
+*Extracted from **tsc-agenda** labeled issues and pull requests from the **nodejs org** prior to the meeting.
+
+$AGENDA_CONTENT$
+
+## Strategic Initiatives
+
+## Upcoming Meetings
+
+* **Node.js Project Calendar**: <https://nodejs.org/calendar>
+
+Click `Add to Google Calendar` at the bottom left to add to your own Google calendar.
+```
+
+## Standard sections
+
+The template is organized into the following sections:
+
+- **Links** — Recording URL (filled in after the meeting), the GitHub issue URL (`$GITHUB_ISSUE$`), and the URL of the minutes document itself (`$MINUTES_DOC$`).
+- **Present** — The invited member list (`$INVITED$`) followed by any observers (`$OBSERVERS$`). Attendees check off their own names during the meeting.
+- **Agenda** — The structured agenda for the meeting, including sub-sections for announcements, reminders, and standing topics. The auto-generated agenda items from labeled GitHub issues and PRs are inserted at `$AGENDA_CONTENT$`.
+- **Strategic Initiatives** — A section for TSC members to report on ongoing strategic work (TSC-specific; remove or rename for other groups).
+- **Upcoming Meetings** — A link to the Node.js Project Calendar so attendees can add future meetings to their own calendars.
+
+## Template variables
+
+The following variables are substituted when `generateMeetingMinutes()` processes this file:
+
+| Variable | Description |
+|---|---|
+| `$TITLE$` | The generated meeting title, e.g. `Node.js TSC Meeting 2025-01-15` |
+| `$GITHUB_ISSUE$` | The URL of the created GitHub issue |
+| `$MINUTES_DOC$` | The URL of the HackMD document |
+| `$INVITED$` | Contents of the `invited_<shortname>` file |
+| `$OBSERVERS$` | Contents of the `observers_<shortname>` file |
+| `$AGENDA_CONTENT$` | Auto-generated Markdown list of GitHub agenda issues, grouped by repository |
+
+See [Template Variables](/templates/variables) for descriptions of every available substitution.
+
+## How it is processed
+
+`generateMeetingMinutes()` reads the file at `templates/minutes_base_<shortname>`, builds a variable map from the meeting configuration and runtime data, then calls `parseVariables()` from `src/utils/templates.mjs` to perform the substitutions. Any `$VARIABLE$` placeholders that have no matching entry in the variable map are replaced with an empty string.

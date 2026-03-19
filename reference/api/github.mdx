@@ -1,0 +1,232 @@
+---
+title: "GitHub module API"
+description: "API reference for src/github.mjs — GitHub integration functions"
+---
+
+The `github.mjs` module wraps [@octokit/rest](https://github.com/octokit/rest.js) to search for agenda issues, create meeting issues, and update existing ones.
+
+## `createGitHubClient(config)`
+
+Creates an authenticated Octokit REST client.
+
+```javascript
+import * as github from './src/github.mjs';
+
+const githubClient = github.createGitHubClient(config);
+```
+
+### Parameters
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Reads `config.githubToken` for the `Authorization` header and `config.verbose` to optionally attach `console` as the Octokit logger.
+</ParamField>
+
+### Returns
+
+`Octokit` — a configured `@octokit/rest` client instance. When `verbose` is `true`, all API request and response details are logged via `console`.
+
+---
+
+## `getAgendaIssues(githubClient, config, meetingConfig)`
+
+Searches the GitHub organisation for all open issues that carry the meeting group's agenda label, then groups them by repository.
+
+```javascript
+const agendaIssues = await github.getAgendaIssues(
+  githubClient,
+  config,
+  meetingConfig
+);
+// { 'nodejs/node': [...], 'nodejs/help': [...] }
+```
+
+### Parameters
+
+<ParamField path="githubClient" type="Octokit" required>
+  Authenticated Octokit client returned by `createGitHubClient`.
+</ParamField>
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Reads `config.meetingGroup` to derive the default agenda label when `AGENDA_TAG` is not set in the template.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration returned by `readMeetingConfig`. Reads `properties.USER` (GitHub org) and `properties.AGENDA_TAG` (label name).
+</ParamField>
+
+### Returns
+
+`Promise<Record<string, GitHubIssue[]>>` — an object mapping repository paths (e.g., `"nodejs/node"`) to arrays of matching issues. Uses `paginate` internally so all pages of results are returned, not just the first page.
+
+---
+
+## `sortIssuesByRepo(issues)`
+
+Groups a flat array of GitHub issues by their repository path.
+
+```javascript
+const grouped = github.sortIssuesByRepo(issues);
+// { 'nodejs/node': [...], 'nodejs/TSC': [...] }
+```
+
+### Parameters
+
+<ParamField path="issues" type="GitHubIssue[]" required>
+  Flat array of GitHub issue objects, each containing a `repository_url` field (e.g., `"https://api.github.com/repos/nodejs/node"`).
+</ParamField>
+
+### Returns
+
+`Record<string, GitHubIssue[]>` — issues grouped by the last two path segments of `repository_url` (owner/repo format).
+
+---
+
+## `createOrUpdateGitHubIssue(githubClient, config, meetingConfig, title, content)`
+
+The primary entry point for writing a meeting issue. Decides whether to create a new issue or update an existing one based on the `--force` flag and an exact title search.
+
+```javascript
+const issue = await github.createOrUpdateGitHubIssue(
+  githubClient,
+  config,
+  meetingConfig,
+  meetingTitle,
+  issueContent
+);
+```
+
+### Parameters
+
+<ParamField path="githubClient" type="Octokit" required>
+  Authenticated Octokit client.
+</ParamField>
+
+<ParamField path="config" type="AppConfig" required>
+  Application configuration. Reads `config.force` to decide whether to skip the duplicate check.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration. Provides the target repository and org.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The meeting title to use as the issue title (e.g., `"Node.js Technical Steering Committee (TSC) Meeting 2025-03-19"`).
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  The fully rendered issue body markdown.
+</ParamField>
+
+### Returns
+
+`Promise<GitHubIssue>` — the created or existing issue object.
+
+**Logic:**
+1. If `force` is `false`: calls `findGitHubIssueByTitle`. If an issue is found and the body differs, calls `updateGitHubIssue`, then returns the existing issue object. If the body is identical, returns the existing issue without any write.
+2. If `force` is `true` or no existing issue is found: calls `createGitHubIssue`.
+
+---
+
+## `createGitHubIssue(githubClient, meetingConfig, title, content)`
+
+Creates a new GitHub issue in the repository configured in the meeting template.
+
+```javascript
+const issue = await github.createGitHubIssue(
+  githubClient,
+  meetingConfig,
+  title,
+  content
+);
+```
+
+### Parameters
+
+<ParamField path="githubClient" type="Octokit" required>
+  Authenticated Octokit client.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration. Reads `properties.USER` (owner), `properties.REPO` (repo), and optionally `properties.ISSUE_LABEL` (applied as a label array).
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  Issue title.
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  Issue body markdown.
+</ParamField>
+
+### Returns
+
+`Promise<GitHubIssue>` — the newly created issue data from the GitHub API (`response.data`).
+
+---
+
+## `updateGitHubIssue(githubClient, issueNumber, content, meetingConfig)`
+
+Updates the body of an existing GitHub issue.
+
+```javascript
+await github.updateGitHubIssue(
+  githubClient,
+  existingIssue.number,
+  newContent,
+  meetingConfig
+);
+```
+
+### Parameters
+
+<ParamField path="githubClient" type="Octokit" required>
+  Authenticated Octokit client.
+</ParamField>
+
+<ParamField path="issueNumber" type="number" required>
+  The issue number to update.
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  The new issue body markdown.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration. Reads `properties.USER` (owner) and `properties.REPO` (repo).
+</ParamField>
+
+### Returns
+
+`Promise<void>` — resolves when the update API call completes.
+
+---
+
+## `findGitHubIssueByTitle(githubClient, title, meetingConfig)`
+
+Searches for an open GitHub issue with an exact title match using the GitHub search API.
+
+```javascript
+const existing = await github.findGitHubIssueByTitle(
+  githubClient,
+  meetingTitle,
+  meetingConfig
+);
+```
+
+### Parameters
+
+<ParamField path="githubClient" type="Octokit" required>
+  Authenticated Octokit client.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The exact issue title to search for. The query uses `in:title` and `is:open` to narrow results to the configured repository.
+</ParamField>
+
+<ParamField path="meetingConfig" type="MeetingConfig" required>
+  Meeting configuration. Reads `properties.USER` (owner) and `properties.REPO` (repo) to scope the search query to a single repository.
+</ParamField>
+
+### Returns
+
+`Promise<GitHubIssue | undefined>` — the first matching issue, or `undefined` if no match is found. Only the first result is requested (`per_page: 1`).

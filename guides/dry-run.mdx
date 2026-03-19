@@ -1,0 +1,79 @@
+---
+title: 'Using Dry Run Mode'
+description: 'How to use the --dry-run flag to preview generated meeting issue content without creating GitHub issues or HackMD documents.'
+---
+
+Dry run mode lets you preview the meeting issue content the tool would generate without creating anything. It prints the rendered issue body to the console and then exits. No GitHub issues are opened, no HackMD documents are created, and no calendar requests are made.
+
+## Running in dry run mode
+
+```bash
+node --env-file=.env create-node-meeting-artifacts.mjs tsc --dry-run
+```
+
+You can substitute any group shortname for `tsc`.
+
+## What dry run does
+
+When `--dry-run` is passed, the tool executes Steps 1–5 of the normal flow and then performs a shortened path through the agenda-fetching and rendering logic before exiting. It skips Steps 6–16 entirely — meaning no calendar lookup, no HackMD document creation, and no GitHub issue creation.
+
+Specifically, with `--dry-run` the tool:
+
+1. **Loads application config** — parses CLI flags and environment variables
+2. **Reads meeting config from templates** — loads `invited_<group>`, `observers_<group>`, and `meeting_base_<group>` from the `templates/` directory
+3. **Fetches open GitHub issues with the agenda label** — queries the GitHub API for issues tagged with the group's `AGENDA_TAG`
+4. **Generates the meeting agenda** — formats the fetched issues into a Markdown list grouped by repository
+5. **Generates the full issue content** — substitutes all template variables into the meeting issue template using the current date as the meeting date
+6. **Prints to console and exits** — outputs the rendered issue body and calls `process.exit(0)`
+
+<Note>
+  Dry run still requires a valid `GITHUB_TOKEN` in your environment. The tool fetches live agenda issues from GitHub even in dry run mode — it only skips the write operations.
+</Note>
+
+## Sample output
+
+```text
+Application config loaded { meetingGroup: 'tsc', dryRun: true, verbose: false, ... }
+
+## Meeting 2026-03-25
+
+**Time**: 2026-03-25 21:00 UTC
+
+| Location      | Time |
+| ------------- | ---- |
+| UTC           | 21:00 |
+| New York      | 17:00 EDT |
+| San Francisco | 14:00 PDT |
+| London        | 21:00 BST |
+| Amsterdam     | 22:00 CEST |
+
+...
+
+## Agenda
+
+### node
+
+* Fix memory leak in streams [#12345](https://github.com/nodejs/node/issues/12345)
+* Deprecate legacy URL API [#12346](https://github.com/nodejs/node/issues/12346)
+
+### TSC
+
+* Vote on new TSC member [#789](https://github.com/nodejs/TSC/issues/789)
+```
+
+## When to use dry run
+
+| Use case | Why dry run helps |
+| --- | --- |
+| Testing a new meeting group template | Verify template files parse correctly and variables substitute as expected before the first real run |
+| Previewing what the issue will look like | Review formatting and agenda content before creating the issue in GitHub |
+| Debugging template variable substitution | Check that `$AGENDA_CONTENT$`, `$INVITED$`, and other variables are replaced with the right values |
+| CI/CD validation | Confirm the tool runs without errors in a pipeline without producing side effects |
+
+<Tip>
+  Combine `--dry-run` with `--verbose` to see additional debug output, including the raw calendar events, parsed meeting config, and fetched agenda issues:
+
+  ```bash
+  node --env-file=.env create-node-meeting-artifacts.mjs tsc --dry-run --verbose
+  ```
+</Tip>

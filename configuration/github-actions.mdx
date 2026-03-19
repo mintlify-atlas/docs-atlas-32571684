@@ -1,0 +1,197 @@
+---
+title: "GitHub Actions integration"
+description: "Automate meeting artifact creation on a schedule or on demand using the two included GitHub Actions workflow files."
+---
+
+The repository ships with two workflow files in `.github/workflows/` that handle both scheduled and manual artifact creation. Both workflows require the same two secrets and delegate the actual work to the same CLI command.
+
+## Required secrets
+
+Before using either workflow, add these secrets to your repository under **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+| --- | --- |
+| `HACKMD_API_TOKEN` | Your HackMD API token. `GITHUB_TOKEN` is provisioned automatically by a GitHub App — see the workflow details below. |
+| `BOT_ID` | The GitHub App ID used to generate an installation token with `repo` scope. |
+| `BOT_PRIVATE_KEY` | The private key for the GitHub App. |
+
+<Note>
+  The workflows use a GitHub App (`BOT_ID` + `BOT_PRIVATE_KEY`) to generate a scoped `GITHUB_TOKEN` at runtime via the `actions/create-github-app-token` action. This allows the token's permissions to be scoped to the target repository's organization dynamically, based on the `USER` field read from the meeting base file.
+</Note>
+
+## Manual workflow
+
+**File:** `.github/workflows/create-meeting-artifacts-manual.yml`
+
+This workflow runs on `workflow_dispatch` (manual trigger from the GitHub UI) and on `workflow_call` (called from other workflows, including the scheduled one). It accepts two inputs:
+
+| Input | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `meeting_group` | string | yes | — | The shortname of the meeting group, matching the `meeting_base_<shortname>` template filename. |
+| `dry_run` | boolean | no | `false` | When `true`, passes `--dry-run` to the CLI. No GitHub issues or HackMD docs are created. |
+
+### Triggering manually
+
+<Steps>
+  <Step title="Go to the Actions tab">
+    Open your repository on GitHub and click the **Actions** tab.
+  </Step>
+  <Step title="Select the workflow">
+    Click **Create Meeting Artifacts (Manual)** in the left sidebar.
+  </Step>
+  <Step title="Run with inputs">
+    Click **Run workflow**, enter the meeting group shortname (e.g., `tsc`), optionally enable **Dry run**, then click **Run workflow**.
+  </Step>
+</Steps>
+
+### Workflow definition
+
+```yaml .github/workflows/create-meeting-artifacts-manual.yml
+name: Create Meeting Artifacts (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      meeting_group:
+        description: 'Meeting group to create artifacts for'
+        required: true
+        type: string
+      dry_run:
+        type: boolean
+        description: 'Dry run?'
+        default: false
+  workflow_call:
+    inputs:
+      meeting_group:
+        description: 'Meeting group to create artifacts for'
+        required: true
+        type: string
+      dry_run:
+        type: boolean
+        description: 'Dry run?'
+        default: false
+
+jobs:
+  create-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read Meeting Variables
+        id: read-vars
+        run: |
+          meeting_group="${{ inputs.meeting_group }}"
+          user=$(grep '^USER=' "templates/meeting_base_${meeting_group}" | cut -d'=' -f2 | xargs)
+          echo "user=$user" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
+        id: app-token
+        with:
+          app-id: ${{ secrets.BOT_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          owner: ${{ steps.read-vars.outputs.user }}
+
+      - name: Create meeting artifacts
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          HACKMD_API_TOKEN: ${{ secrets.HACKMD_API_TOKEN }}
+          ADDITIONAL_ARGS: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+        run: node create-node-meeting-artifacts.mjs ${{ inputs.meeting_group }} --verbose $ADDITIONAL_ARGS
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: meeting-artifacts-${{ inputs.meeting_group || 'tsc' }}
+          path: |
+            ~/.make-node-meeting/
+            *.md
+          retention-days: 7
+          if-no-files-found: ignore
+```
+
+<Tip>
+  The workflow always uploads generated files as a GitHub Actions artifact (retained for 7 days), even if the run fails. This lets you inspect what the CLI produced when debugging an issue.
+</Tip>
+
+## Scheduled workflow
+
+**File:** `.github/workflows/create-meeting-artifacts-scheduled.yml`
+
+This workflow runs daily at midnight UTC (`0 0 * * *`) and can also be triggered manually via `workflow_dispatch`. It automatically discovers every `meeting_base_*` file in the `templates/` directory and runs the manual workflow for each group in parallel using a matrix strategy.
+
+### How group discovery works
+
+A `create-matrix` job runs first and uses `find` to list all `meeting_base_*` files, strips the prefix, and outputs a JSON array of shortnames. That array becomes the matrix for the `create-artifacts` job, which calls the manual workflow once per group.
+
+This means you do **not** need to edit the scheduled workflow when you add a new meeting group — simply adding a new `meeting_base_<shortname>` file to `templates/` is sufficient.
+
+### Workflow definition
+
+```yaml .github/workflows/create-meeting-artifacts-scheduled.yml
+name: Create Meeting Artifacts (Scheduled)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  create-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      groups: ${{ steps.set-matrix.outputs.configs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Get config basenames
+        id: set-matrix
+        run: |
+          CONFIGS=$(find templates/ -maxdepth 1 -type f -name 'meeting_base_*' | \
+            jq -R -s -c 'split("\n")[:-1] | map(sub(".*meeting_base_";""))')
+          echo "configs=$CONFIGS" >> $GITHUB_OUTPUT
+
+  create-artifacts:
+    needs: create-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        groups: ${{ fromJson(needs.create-matrix.outputs.groups) }}
+    uses: ./.github/workflows/create-meeting-artifacts-manual.yml
+    secrets: inherit
+    with:
+      meeting_group: ${{ matrix.groups }}
+```
+
+<Note>
+  `fail-fast: false` ensures that a failure for one meeting group does not cancel artifact creation for the remaining groups in the matrix.
+</Note>
+
+## Changing the schedule
+
+To change how often the scheduled workflow runs, edit the `cron` expression in `create-meeting-artifacts-scheduled.yml`:
+
+```yaml
+schedule:
+  - cron: '0 0 * * 1'  # Every Monday at midnight UTC
+```
+
+Use [crontab.guru](https://crontab.guru) to build and validate cron expressions.
+
+## Adding a new meeting group
+
+No workflow changes are needed. Add a `meeting_base_<shortname>` file to your `templates/` directory and the scheduled workflow will pick it up on its next run. To test immediately, trigger the manual workflow with the new shortname.
+
+See [Meeting base configuration](/configuration/meeting-base) for details on the template file format.

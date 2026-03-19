@@ -1,122 +1,93 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Node.js Meeting Artifacts Creator",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#675ff1",
+    "light": "#4c4979",
+    "dark": "#040405"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/c6c9547e-7ce6-4ceb-85ad-d33b7e57dd91.jpg",
+  "logo": {
+    "light": "https://media.brand.dev/07eb2388-6035-41b7-b701-fa7bac7a4d0a.svg",
+    "dark": "https://media.brand.dev/07eb2388-6035-41b7-b701-fa7bac7a4d0a.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/nodejs/create-node-meeting-artifacts"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/nodejs/create-node-meeting-artifacts"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "installation"]
+          },
+          {
+            "group": "Configuration",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "configuration/environment-variables",
+              "configuration/meeting-base",
+              "configuration/github-actions"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Templates",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "templates/overview",
+              "templates/invited",
+              "templates/observers",
+              "templates/meeting-base",
+              "templates/minutes-base",
+              "templates/variables"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/adding-meeting-group",
+              "guides/dry-run",
+              "guides/development"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "CLI Reference",
             "pages": [
-              "api-reference/introduction"
+              "reference/cli",
+              "reference/options"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "API Reference",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "reference/api/meeting",
+              "reference/api/github",
+              "reference/api/hackmd",
+              "reference/api/calendar"
+            ]
+          },
+          {
+            "group": "Meeting Groups",
+            "pages": [
+              "reference/meeting-groups"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

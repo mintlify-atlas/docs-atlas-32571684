@@ -1,0 +1,80 @@
+---
+title: "Supported meeting groups"
+description: "All Node.js working groups and committees with built-in template support"
+---
+
+Each meeting group has a shortname that you pass as the `<group>` argument to the CLI. The tool uses this shortname to load four template files from the `templates/` directory.
+
+```bash
+node --env-file=.env create-node-meeting-artifacts.mjs <shortname>
+```
+
+## Node.js groups
+
+These groups are hosted under the `nodejs` GitHub organisation.
+
+| Shortname | Group name | GitHub repo |
+|-----------|------------|-------------|
+| `benchmarking` | Benchmarking WorkGroup | `nodejs/benchmarking` |
+| `build` | Build WorkGroup | `nodejs/build` |
+| `diag` | Diagnostics WorkGroup | `nodejs/diagnostics` |
+| `diag_deepdive` | Diagnostics Deep Dive | `nodejs/diagnostics` |
+| `loaders` | Loaders Team | `nodejs/loaders` |
+| `modules` | Modules Team | `nodejs/modules` |
+| `next-10` | Next 10 Years team | `nodejs/next-10` |
+| `outreach` | Outreach | `nodejs/outreach` |
+| `package-maintenance` | Package Maintenance Team | `nodejs/package-maintenance` |
+| `Release` | Release WorkGroup | `nodejs/Release` |
+| `security-wg` | Security team | `nodejs/security-wg` |
+| `test_runner` | Test Runner | `nodejs/test-runner` |
+| `tooling` | Tooling Group | `nodejs/tooling` |
+| `tsc` | Technical Steering Committee (TSC) | `nodejs/TSC` |
+| `typescript` | TypeScript team | `nodejs/typescript` |
+| `userfeedback` | User Feedback | `nodejs/user-feedback` |
+| `uvwasi` | uvwasi team | `nodejs/uvwasi` |
+| `web` | Web Team | `nodejs/web-team` |
+| `web-server-frameworks` | Web Server Frameworks | `nodejs/web-server-frameworks` |
+
+## OpenJS Foundation groups
+
+These groups are hosted under the `openjs-foundation` GitHub organisation. Their `HOST` property is set to `"OpenJS Foundation"`.
+
+| Shortname | Group name | GitHub repo |
+|-----------|------------|-------------|
+| `bundler_collab` | Bundler Collaboration Space | `openjs-foundation/bundler-collab-space` |
+| `cross_project_council` | Cross Project Council | `openjs-foundation/cross-project-council` |
+| `ecosystem_report` | Ecosystem Report Collab Space | `openjs-foundation/ecosystem-report-collab-space` |
+| `package_metadata_interop` | Package Metadata Interoperability Collab Space | `openjs-foundation/package-metadata-interoperability-collab-space` |
+| `security_collab` | Security Collab Space | `openjs-foundation/security-collab-space` |
+| `standards` | Standards Working Group | `openjs-foundation/standards` |
+| `sustainability_collab` | Sustainability Collaboration Space | `openjs-foundation/sustainability-collab-space` |
+
+## Example commands
+
+<CodeGroup>
+
+```bash TSC meeting
+node --env-file=.env create-node-meeting-artifacts.mjs tsc
+```
+
+```bash Build WG meeting
+node --env-file=.env create-node-meeting-artifacts.mjs build
+```
+
+```bash Cross Project Council meeting
+node --env-file=.env create-node-meeting-artifacts.mjs cross_project_council
+```
+
+```bash Release WG meeting
+node --env-file=.env create-node-meeting-artifacts.mjs Release
+```
+
+</CodeGroup>
+
+<Note>
+  Shortnames are case-sensitive. `Release` must be capitalised; `tsc` must be lowercase. The shortname must exactly match the suffix of the template files in the `templates/` directory.
+</Note>
+
+## Adding a new group
+
+To add support for a new meeting group, create the four template files with the new shortname as the suffix. See [Adding a meeting group](/guides/adding-meeting-group) for step-by-step instructions.

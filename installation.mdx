@@ -1,0 +1,128 @@
+---
+title: Installation
+description: Install the Node.js Meeting Artifacts Creator, configure your API tokens, and verify your setup.
+---
+
+## Requirements
+
+Before installing, make sure your environment meets the following requirements:
+
+- **Node.js 22 or later** — the project's `.nvmrc` pins Node.js version 22
+- **npm** — included with Node.js; used to install dependencies
+- A **GitHub Personal Access Token** with the `repo` scope
+- A **HackMD API Token** from your HackMD account
+
+## Installation options
+
+### Clone from GitHub (recommended)
+
+Cloning the repository gives you access to the full project, including templates for existing meeting groups.
+
+```bash
+git clone https://github.com/nodejs/create-node-meeting-artifacts
+cd create-node-meeting-artifacts
+npm install
+```
+
+### Run with npx
+
+If you only need to run the tool without keeping a local copy, you can invoke it directly with npx from inside the repository directory:
+
+```bash
+npx --env-file=.env . tsc
+```
+
+<Note>
+  The `npx` approach still requires the repository to be cloned locally, because the tool reads meeting configuration from the `templates/` directory.
+</Note>
+
+## Node.js version management
+
+The repository includes a `.nvmrc` file that specifies Node.js 22. If you use [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions, you can switch to the correct version automatically:
+
+```bash
+nvm install
+nvm use
+```
+
+This reads `.nvmrc` and installs or activates Node.js 22. If you use a different version manager such as [fnm](https://github.com/Schniz/fnm) or [volta](https://volta.sh/), check their documentation for `.nvmrc` compatibility.
+
+<Tip>
+  Always use the version specified in `.nvmrc` when contributing to or running the tool. Node.js 22 is required because the tool uses native ESM modules and the built-in `--env-file` flag.
+</Tip>
+
+## Token setup
+
+<Warning>
+  Treat your API tokens as secrets. Never commit your `.env` file to version control. The repository's `.gitignore` excludes `.env` by default — verify this is still the case before committing.
+</Warning>
+
+### GitHub Personal Access Token
+
+<Steps>
+  <Step title="Open GitHub token settings">
+    Go to [github.com/settings/tokens](https://github.com/settings/tokens) and click **Generate new token**.
+  </Step>
+  <Step title="Select scopes">
+    Enable the `repo` scope. This grants the tool permission to create issues and read issues in the target repositories.
+  </Step>
+  <Step title="Copy the token">
+    Copy the generated token immediately — GitHub only shows it once. You will add it to your `.env` file in the next section.
+  </Step>
+</Steps>
+
+### HackMD API Token
+
+<Steps>
+  <Step title="Open HackMD account settings">
+    Sign in to [hackmd.io](https://hackmd.io/) and navigate to Account Settings > API Tokens.
+  </Step>
+  <Step title="Create a new token">
+    Click **New API Token**, give it a descriptive name such as `meeting-artifacts`, and confirm.
+  </Step>
+  <Step title="Copy the token">
+    Copy the token value. You will not be able to view it again after leaving the page.
+  </Step>
+  <Step title="Optional: set a team workspace">
+    If you want meeting notes created in a shared team space rather than your personal HackMD account, note your team's slug. You can set it with the `HACKMD_TEAM_NAME` environment variable.
+  </Step>
+</Steps>
+
+## Environment variables setup
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+The `.env.example` file documents every supported variable:
+
+```bash
+# Required: GitHub Token (Needs "repo" permissions)
+# GITHUB_TOKEN=your_personal_access_token_or_org_token
+
+# Required: HackMD Configuration
+# HACKMD_API_TOKEN=your_hackmd_api_token
+# HACKMD_TEAM_NAME=your_hackmd_team_name_optional # Defaults to your own personal space
+```
+
+Edit `.env` and uncomment each line, replacing the placeholder values with your real tokens:
+
+| Variable | Required | Description |
+|---|---|---|
+| `GITHUB_TOKEN` | Yes | GitHub Personal Access Token with `repo` scope |
+| `HACKMD_API_TOKEN` | Yes | HackMD API token for creating and updating notes |
+| `HACKMD_TEAM_NAME` | No | HackMD team slug; defaults to your personal space |
+
+The tool loads these variables at runtime using Node.js's built-in `--env-file` flag — no additional dotenv configuration is required.
+
+## Verify installation
+
+Confirm everything is set up correctly by running a dry run for the `tsc` meeting group:
+
+```bash
+node --env-file=.env create-node-meeting-artifacts.mjs tsc --dry-run
+```
+
+If the tool is configured correctly, it prints the generated GitHub issue content to the console and exits without creating anything. If you see an authentication error, double-check that your tokens are correctly set in `.env` and that the `GITHUB_TOKEN` has the `repo` scope.
